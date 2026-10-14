@@ -9,6 +9,18 @@
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
 | 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. |
 
+## Spec patch (2026-10-15)
+
+Changes to `PROJECT_SPEC.md` only (no code, tests, or data files changed):
+- **Section 7.2, `GET /api/risk/{district_id}`**: restored broken table row to a single line; added `date` query parameter (optional, default latest snapshot; the `days` window ends at this date) and complete example JSON.
+- **Section 7.2, standalone paragraph**: added `coastal_factor` explain paragraph below the last API table row; removed the duplicate that had been glued onto the broken table row.
+- **Section 7.6, Drought code block**: removed sentence about Tmax7 that was accidentally pasted onto the `d_soil` line; block is now identical to HEAD.
+- **Section 7.6, missing-inputs paragraph**: added after the Drought closing fence; specifies that missing soil or expired soil drops the soil term and renormalizes remaining weights; missing Tmax7 drops the heat term and renormalizes remaining drought weights; both set `degraded` true and the relevant `inputs.*_missing` flag.
+- **Section 7.7**: replaced the stale-days sentence with the 7-day max-age rule (`soil_stale_days` stored even when expired; older value counts as missing per Section 7.6).
+- **F2.2**: changed fallback from `degraded: true` to the documented Level 1 formula (`degraded: false`), matching Section 7.6.
+
+Open code follow-up: Section 7.6 and the new missing-inputs paragraph specify that a missing Tmax7 should drop the heat term and **renormalize** the remaining drought weights. The current `score_drought` in `scoring.py` instead zeroes `sub_heat` and keeps the full 0.20 weight, biasing the score low. A code change to `score_drought` (and its tests) is needed to match the spec.
+
 ## Phase 0 details
 
 Done:

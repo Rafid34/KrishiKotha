@@ -160,7 +160,7 @@ Acceptance criteria:
 Description: AppEEARS point task for each district, 16-day NDVI compared to the 2003 to 2020 mean for the same period, used as `s_veg` in the salinity formula and as a crop health indicator.
 Acceptance criteria:
 - NDVI anomaly appears in the district detail panel with the product name and version.
-- If the task is pending or fails, scores fall back to the formula without NDVI and `degraded: true`.
+- If the task is pending or fails, scores fall back to the documented Level 1 formula (`degraded: false`).
 
 **F2.3 Sylhet 2022 event replay and backtest**
 Description: Replays 2022-05-15 to 2022-06-30 for Sylhet using IMERG Final Run, shows the five steps from the pitch slide (rain begins, rain builds, heavy rain, extreme rain, flood) on a timeline, and computes lead time between the first High flood level and the reference flood onset date.
@@ -547,7 +547,7 @@ Base path `/api`. All responses are JSON unless noted. Dates use `YYYY-MM-DD`.
 | GET | `/api/districts` | none | `[{"id":"sylhet","name_en":"Sylhet","name_bn":"সিলেট","lat":24.8949,"lon":91.8687,"division":"Sylhet"}]` |
 | GET | `/api/crops` | none | `[{"id":"aman","name_en":"Aman rice","name_bn":"আমন ধান"}]` |
 | GET | `/api/risk` | Query: `date` (optional, default latest), `hazard` (optional: `drought`, `flood`, `salt`) | `{"date":"2022-06-16","districts":[{"district_id":"sylhet","drought":{"score":12.4,"level":"low"},"flood":{"score":84.0,"level":"high"},"salt":{"score":5.0,"level":"low"},"degraded":false}]}` |
-| GET | `/api/risk/{district_id}` | Query: `days` (default 60, max 365) | `{"district_id":"sylhet","series":[{"date":"2022-06-14","drought_score":10.1,"flood_score":61.0,"salt_score":4.0,"rain_mm":78.2,"soil_wetness":0.91}]}` |
+| GET | `/api/risk/{district_id}` | Query: `days` (default 60, max 365), `date` (optional, default latest snapshot; the `days` window ends at this date) | `{"district_id":"sylhet","series":[{"date":"2022-06-14","drought_score":10.1,"flood_score":61.0,"salt_score":4.0,"rain_mm":78.2,"soil_wetness":0.91}]}` |
 | GET | `/api/risk/{district_id}/explain` | Query: `date` (optional) | `{"district_id":"sylhet","date":"2022-06-16","flood":{"score":84.0,"inputs":[{"name":"rain3_pctl","value":97.0,"weight":0.40,"source":"GPM IMERG V07","data_date":"2022-06-16"}]},"degraded":false}` |
 | POST | `/api/advice` | `{"district_id":"sylhet","crop_id":"aman","date":"2022-06-16","language":"bn"}` | `{"rule_id":"flood_high_harvest","text_bn":"...","text_en":"...","hazard":"flood","level":"high","audio_url":"/api/audio/3f2a.mp3"}` |
 | POST | `/api/sim/sms` | `{"from":"+8801700000000","body":"SYLHET AMAN"}` | `{"replies":[{"text":"..."}],"subscriber_id":12}` |
@@ -560,6 +560,8 @@ Base path `/api`. All responses are JSON unless noted. Dates use `YYYY-MM-DD`.
 | GET | `/api/pipeline/status` | none | Last `PipelineRun` row |
 | POST | `/api/admin/pipeline/run` | Header `X-Admin-Key`; body `{"mode":"live","as_of":"2026-11-14"}` | `{"run_id":7,"status":"started"}` |
 | POST | `/api/admin/broadcast` | Header `X-Admin-Key`; body `{"district_id":"sylhet","min_level":"moderate","dry_run":true}` | `{"recipients":14,"sample_text_bn":"...","sent":0}` |
+
+For `salt`, the explain block adds a `coastal_factor` object: `{"name":"coastal_proximity","raw":<distance km>,"value":<0-100 sub-score>,"multiplier":<value/100>,"source":"...","data_date":"..."}`. The coastal term multiplies the additive sum in Section 7.6, so it is reported separately and `salt.inputs` weights sum to 1.0. `coastal_factor` is null for flood and drought. Each hazard block also includes `level`, and each input includes `raw`.
 
 Error format for all routes: `{"error":{"code":"not_found","message":"District 'xyz' does not exist"}}`.
 
@@ -656,6 +658,8 @@ d_heat  = clamp((Tmax7 - Tbase) / 4 * 100, 0, 100)   # +4 C anomaly scores 100
 DROUGHT = 0.45*d_soil + 0.35*d_rain + 0.20*d_heat
 ```
 
+Missing inputs (Level 1): if soil wetness is missing or expired (Section 7.7), drop the soil term and renormalize the remaining weights of that hazard so they sum to 1.0. If Tmax7 is missing, drop the heat term and renormalize the remaining drought weights the same way. In both cases set `degraded` true, and set `inputs.soil_missing` or `inputs.tmax_missing` true.
+
 Salinity stress proxy (no NASA product measures soil salinity; this is a documented proxy):
 ```
 s_coast  = clamp((150 - coastal_distance_km) / 130 * 100, 0, 100)   # 20 km or less scores 100, 150 km or more scores 0
@@ -670,7 +674,7 @@ Weights and thresholds live in `backend/app/services/risk/scoring.py` as named c
 
 ### 7.7 Output contract for the pipeline
 
-`run_pipeline.py` exits 0 if at least IMERG and POWER succeeded for all districts, writes a `PipelineRun` row, and writes snapshots. Effective date is the latest date for which IMERG is available; POWER soil wetness uses its latest available date, and the number of stale days is stored in `inputs`.
+`run_pipeline.py` exits 0 if at least IMERG and POWER succeeded for all districts, writes a `PipelineRun` row, and writes snapshots. Effective date is the latest date for which IMERG is available; POWER soil wetness uses its latest available date up to 7 days old; an older value counts as missing (Section 7.6). The age in days is stored in `inputs` as `soil_stale_days`, even when the value has expired.
 
 ---
 
