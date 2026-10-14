@@ -22,3 +22,9 @@ Run with `python scripts/verify_endpoints.py`.
 - `earthaccess` 0.17.0 also accepts `EARTHDATA_TOKEN` as an alternative to username and password.
 - `earthaccess` emits a `FutureWarning` about `DataGranule.size()` becoming an attribute. This is harmless.
 - Python 3.11 is used through the `py -3.11` launcher. The `python3.11` shim on PATH is a broken uv trampoline.
+
+## Phase 2: POWER daily point (2026-10-14)
+
+- Request `parameters=PRECTOTCORR,T2M_MAX,RH2M,GWETROOT&community=AG&format=JSON` for Sylhet, 2022-06-10 to 2022-06-16: all four keys returned under `properties.parameter`, keyed by `YYYYMMDD`. Header reports `fill_value: -999.0`, API v2.10.0, `time_standard: LST`.
+- Full 2001-01-01 to 2020-12-31 request returned 7305 days for all eight districts in a single call each.
+- Note: the Phase 0 check (a) uses `T2M` and `ALLSKY_SFC_SW_DWN`, not the Phase 2 parameter set; both work.

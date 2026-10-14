@@ -4,6 +4,7 @@
 |---|---|---|
 | 0: Environment setup | Partial | Scaffold, deps, `npm run build` done. Endpoints (a), (b), (e), (f) pass. (c) and (d) blocked on Earthdata credentials. |
 | 1: Static data, database, seed | Done | Verified: seed run twice gives 8 districts and 3 crops; `/api/health` returns ok. |
+| 2: POWER client and baseline | Done | Verified: 13 tests pass; 8 baseline files written; Sylhet mid-June `rain30_mean` 623.2 mm > Rajshahi 188.1 mm. |
 
 ## Phase 0 details
 
@@ -28,3 +29,12 @@ Notes:
 - `crops.json` stores stages with `start_month`/`end_month` (wrap-around allowed, e.g. Dec to Jan) plus an `off_season` block of 0.7.
 - `backend/app`: `config.py`, `db.py`, `models.py` (all Section 7.1 entities), `seed.py` (idempotent upsert), `main.py`, `routers/meta.py` (`/api/health`).
 - Run from the repo root: `.venv/Scripts/python -m backend.app.seed`.
+
+## Phase 2 details
+
+- `services/nasa/power.py`: `fetch_power()` returns a date-indexed DataFrame; -999 becomes NaN; file cache in `data/cache/power/`; retry with exponential backoff on network errors and HTTP 429/5xx.
+- `services/risk/indicators.py`: `percentile_rank`, `rolling_sum`.
+- `services/risk/baseline.py` and `pipeline/build_baseline.py`: write `data/baseline/{district}.json` and 2928 `baselines` rows (8 x 366).
+- Tests: `backend/tests/test_power_client.py`, `test_indicators.py` with fixture `fixtures/power_sylhet_sample.json` (saved live response). `pytest.ini` sets `pythonpath = .`.
+- Check script: `python scripts/check_baseline.py`.
+- Decisions recorded in `docs/methodology.md`; POWER observations in `docs/data_sources.md`.

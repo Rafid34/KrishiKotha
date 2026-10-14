@@ -2,3 +2,11 @@
 
 ## Decisions
 
+
+- Crop stages are stored with `start_month` and `end_month` (inclusive, wrap-around allowed, e.g. Dec to Jan). Where two stages overlap in a month (e.g. Aman Jul is both nursery and transplanting), the later stage in `crops.json` order wins; to be implemented in `stages.py`.
+- Percentile rank uses the mid-rank convention for ties: `(below + 0.5 * equal) / n * 100`. This keeps a zero-rain day from scoring 0 or 100 when many baseline samples are zero.
+- Rolling sums need a full window (`min_periods = window`); any missing day inside the window gives a missing sum, which is dropped from baseline samples.
+- Baseline day-of-year window is circular on a 366-day year, plus or minus 15 days. Day-of-year numbers are used as is, so in non-leap years dates after 28 Feb are one day off versus leap years (a 1-day shift, well inside the 31-day window).
+- Baseline files store the full sorted samples (about 620 values per sample per day of year), rounded (rain to 0.1 mm, soil wetness to 0.001) and written compactly. This is about 3.2 MB per district, 25 MB for all eight.
+- Baseline `ndvi_mean` is left null until Level 2.
+- POWER requests use one call per district for the full 2001-2020 range. Raw responses are cached under `data/cache/power/` (gitignored).
