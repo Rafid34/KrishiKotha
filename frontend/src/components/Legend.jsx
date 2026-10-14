@@ -1,0 +1,1 @@
+// Low, Moderate, High legend

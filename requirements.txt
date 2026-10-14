@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+httpx
+earthaccess
+xarray
+netCDF4
+h5py
+numpy
+pandas
+gTTS
+python-multipart
+pytest
+respx
+twilio
