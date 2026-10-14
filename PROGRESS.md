@@ -7,6 +7,7 @@
 | 2: POWER client and baseline | Done | Verified: 13 tests pass; 8 baseline files written; Sylhet mid-June `rain30_mean` 623.2 mm > Rajshahi 188.1 mm. |
 | 3: GPM IMERG client | Done | Verified: CLI prints 8 values for 2022-06-16 (Sylhet 164.8, Sunamganj 267.6 mm/day, Final Run); 21 tests pass; cached files about 22 KB each; raw granules deleted. |
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
+| 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. |
 
 ## Phase 0 details
 
@@ -75,3 +76,20 @@ Notes:
   - In Section 7.6 line 666, the salinity formula without NDVI is noted as `# degraded = false; documented Level 1 formula`. In contrast, Section 4 F2.2 line 163 notes: `If the task is pending or fails, scores fall back to the formula without NDVI and degraded: true`. In `scoring.py`, `degraded: False` is the default in Level 1 mode, but `degraded` can be explicitly overridden if a caller in Level 2 had a failed NDVI fetch.
   - Section 7.6 does not write out the exact algebraic formula when `soil_pctl` is missing for flood or drought, though Section 9 task 4.4 requires `missing soil input sets degraded: true`. As recorded in `docs/methodology.md`, remaining weights are normalized proportionally to sum to 1.0 (flood rain3: 0.40/0.75, rain7: 0.35/0.75; drought rain: 0.35/0.55, heat: 0.20/0.55).
 
+
+## Phase 5 details
+
+- `pipeline/run_pipeline.py`: `--mode live|snapshot`, `--start`, `--end`, `--run late|final`. Live mode fetches IMERG (with a 29-day lookback), POWER `GWETROOT` and `T2M_MAX`, scores, upserts `risk_snapshots` and `observations`, and writes a `PipelineRun` with per-source status. Exit 0 only for status `ok`. Without `--start`/`--end` it scores the 30 days ending at the newest IMERG granule. `--mode snapshot` just loads `data/snapshots/*.json`.
+- `pipeline/build_snapshot.py` writes `data/snapshots/latest_30d.json` (240 rows) and `sylhet_2022.json` (376 rows, all districts; see `docs/methodology.md`). Both are committed (about 1.7 MB).
+- `backend/app/services/snapshots.py` (export, idempotent load), `services/nasa/offline.py` (`ensure_online()` guard used by POWER, CMR, Earthdata and IMERG clients), `errors.py` (uniform error body), `timeutil.py`, `schemas.py`.
+- Routes per Section 7.2: `/api/districts`, `/api/crops` (`routers/districts.py`), `/api/risk`, `/api/risk/{id}`, `/api/risk/{id}/explain` (`routers/risk.py`), `/api/health`, `/api/sources`, `/api/pipeline/status` (`routers/meta.py`). `/api/layers`, advice, messaging, backtest and admin routes belong to later phases.
+- `main.py` runs `create_all` and seed at startup, and loads snapshots when `DATA_MODE=snapshot`.
+- Tests: `test_api.py` (14, in-memory DB), `test_pipeline.py` (8, fake fetchers, snapshot round trip, offline guard). `conftest.py` forces `DATA_MODE=live` for tests.
+- Offline check: `python scripts/verify_offline.py` (real uvicorn, snapshot mode, empty DB, non-loopback sockets blocked and logged). This is a process-level block, not an OS firewall.
+
+Deviations and open points:
+- Also ran `--run late` for the 30 days to 2026-10-13 (Section 11.4), so `latest_30d.json` holds recent data rather than the 2022 event. This went beyond the single Final Run requested.
+- `sylhet_2022.json` contains all 8 districts, so `/api/risk?date=2022-06-16` returns 8 districts in snapshot mode.
+- `/api/sources` keeps the Section 7.2 list shape, so it does not yet echo `SCORING_CONSTANTS`; decide before Phase 12.
+- The first Final Run attempt failed on a transient Earthdata login error (run row 1 is `failed` in the local DB, not exported). Retries were added.
+- `npm install` vulnerabilities from Phase 0 are still not addressed.

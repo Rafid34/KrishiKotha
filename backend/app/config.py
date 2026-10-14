@@ -10,6 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 STATIC_DIR = REPO_ROOT / "data" / "static"
 BASELINE_DIR = REPO_ROOT / "data" / "baseline"
 CACHE_DIR = REPO_ROOT / "data" / "cache"
+SNAPSHOT_DIR = REPO_ROOT / "data" / "snapshots"
 VERSION = "1.0.0"
 
 

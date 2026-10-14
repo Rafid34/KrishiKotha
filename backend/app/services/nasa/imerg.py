@@ -20,6 +20,7 @@ import xarray as xr
 
 from ...config import CACHE_DIR, STATIC_DIR, get_settings
 from . import earthdata_auth
+from .offline import ensure_online
 
 IMERG_CACHE_DIR = CACHE_DIR / "imerg"
 VERSION = "07"
@@ -103,6 +104,7 @@ def fetch_day(
     path = cache_path(day, run, cache_dir)
     if path.exists():
         return path
+    ensure_online(f"IMERG download for {day}")
     bbox = bbox or get_settings().bbox
 
     import earthaccess

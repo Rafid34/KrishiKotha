@@ -56,3 +56,11 @@ Command: `python -m backend.app.services.nasa.imerg --date 2022-06-16 --run fina
 | Chattogram | 72.28 | 82.89 |
 
 Sanity check passed: Sylhet and Sunamganj are both far above 20 mm/day during the June 2022 floods. The Late Run is higher than the Final Run in every district (the Final Run is gauge-adjusted); use Final for event replay and backtest. Maximum clipped cell value in the Final file is 391.3 mm/day.
+
+## Phase 5: end-to-end pipeline runs (2026-10-14)
+
+- `python -m pipeline.run_pipeline --start 2022-05-15 --end 2022-06-30 --run final`: status `ok`, 376 risk rows (8 districts x 47 dates), 1128 observations, 76 IMERG Final Run days fetched (2022-04-16 to 2022-06-30, of which 29 are lookback), POWER last data date 2022-06-30, no skipped district-dates. The first attempt stopped after a transient Earthdata login `ConnectionError`; see `docs/methodology.md` for the retry change.
+- `python -m pipeline.run_pipeline --run late` (defaults: end = newest `GPM_3IMERGDL` granule, start = end - 29): status `ok`, IMERG last data date 2026-10-13, POWER last data date 2026-10-11, so soil wetness was at most 2 days stale.
+- POWER daily latency observed on 2026-10-14: 2 to 3 days. IMERG Late Run: data for the previous day was available.
+- Sylhet on 2022-06-16 (Final Run, V07): flood 98.0 (high), drought 0.9, salinity 0.0. `rain3` 286.7 mm (99.2nd percentile of the baseline), `rain7` 391.4 mm (96.6th), soil wetness 1.0 (98th percentile). Sunamganj 99.4 and Rangpur 99.0 flood, Chattogram 79.5; Rajshahi, Khulna and Satkhira are low for flood.
+- `scripts/verify_offline.py` serves the API with `DATA_MODE=snapshot`, an empty database and all non-loopback sockets blocked: 11 checks pass and the server made 0 outbound attempts.

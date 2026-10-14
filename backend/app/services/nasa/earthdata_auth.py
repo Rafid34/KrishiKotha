@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 from ...config import get_settings
+from .offline import ensure_online
 
 
 class EarthdataAuthError(RuntimeError):
@@ -17,6 +18,7 @@ def login() -> Any:
     Credentials come from `EARTHDATA_USERNAME` / `EARTHDATA_PASSWORD` (or
     `EARTHDATA_TOKEN`); values from `.env` are exported to the process environment first.
     """
+    ensure_online("Earthdata Login")
     import earthaccess
 
     settings = get_settings()

@@ -13,6 +13,7 @@ import httpx
 import pandas as pd
 
 from ...config import CACHE_DIR, get_settings
+from .offline import ensure_online
 
 PARAMETERS = ("PRECTOTCORR", "T2M_MAX", "RH2M", "GWETROOT")
 FILL_VALUE = -999.0
@@ -99,6 +100,7 @@ def fetch_power(
     if path is not None and path.exists():
         return parse_power_json(json.loads(path.read_text(encoding="utf-8")))
 
+    ensure_online("NASA POWER")
     url = f"{get_settings().power_api_base.rstrip('/')}/temporal/daily/point"
     params = build_params(lat, lon, start, end, parameters)
     owns_client = client is None

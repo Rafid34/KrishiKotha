@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import httpx
 
 from ...config import get_settings
+from .offline import ensure_online
 
 
 class CmrError(RuntimeError):
@@ -16,6 +17,7 @@ def latest_granule_date(
     short_name: str, version: str, *, client: httpx.Client | None = None
 ) -> datetime | None:
     """Return the start time (UTC) of the newest granule of a collection, or None if none exist."""
+    ensure_online("NASA CMR")
     url = f"{get_settings().cmr_base.rstrip('/')}/granules.json"
     params = {
         "short_name": short_name,
