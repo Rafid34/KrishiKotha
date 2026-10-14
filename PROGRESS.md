@@ -7,7 +7,7 @@
 | 2: POWER client and baseline | Done | Verified: 13 tests pass; 8 baseline files written; Sylhet mid-June `rain30_mean` 623.2 mm > Rajshahi 188.1 mm. |
 | 3: GPM IMERG client | Done | Verified: CLI prints 8 values for 2022-06-16 (Sylhet 164.8, Sunamganj 267.6 mm/day, Final Run); 21 tests pass; cached files about 22 KB each; raw granules deleted. |
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
-| 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. |
+| 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. Spec Section 7.2 `date` param on `GET /api/risk/{district_id}` implemented: 62 tests pass. |
 
 ## Spec patch (2026-10-15)
 
@@ -113,8 +113,17 @@ Changes:
 - Salinity explain: `/api/risk/{id}/explain` now returns the `coastal_proximity` entry as `salt.coastal_factor` (`name`, `raw` km, `value` 0 to 100, `multiplier` = value/100, `source`, `data_date`, no weight) and removes it from `salt.inputs`. The remaining weights sum to 1.0 (0.55 + 0.45, or 0.40 + 0.30 + 0.30 with NDVI). `coastal_factor` is null for flood and drought. `score_salt`, stored snapshots and scores are unchanged; the split happens only when building the explain response. This adds a field not in the Section 7.2 example, and `salt.inputs` no longer lists the coastal entry that the Section 7.6 weights table implied.
 - Tests: 61 pass (was 58). Added `test_power_soil_max_age_boundary`, `test_expired_soil_triggers_degraded_fallback` and `test_salt_explain_separates_coastal_factor`; the `test_api.py` salt fixture now has a realistic input list.
 
-Not done:
-- `date` query on `GET /api/risk/{district_id}`: skipped because Section 7.2 defines only `days` for this route (`date` appears only on `/api/risk` and `/explain`). The series still ends at the district's latest snapshot date. Decide whether to add `date` in the spec first.
+Not done (at time of patch):
+- `date` query on `GET /api/risk/{district_id}`: skipped because Section 7.2 defined only `days` for this route. Subsequently added — see **Section 7.2 `date` param** follow-up below.
+
+## Section 7.2 `date` param on `GET /api/risk/{district_id}`
+
+Spec change (2026-10-15): Section 7.2 added an optional `date` query parameter to `GET /api/risk/{district_id}`. Default is the district's latest snapshot; the `days` window ends at that date.
+
+Changes:
+- `backend/app/routers/risk.py`: `risk_series` now accepts `date: date | None = Query(None, ...)`. When supplied, `last = date`; otherwise `last` is resolved from `max(RiskSnapshot.date)` as before. No other logic changed.
+- `backend/tests/test_api.py`: added `test_risk_series_date_param` — requests a June 2022 window (fixture data) with `date=2022-06-15` and verifies the window ends there (2022-06-16 excluded), then checks `days=2` and `days=1` sub-windows.
+- Tests: 62 pass (was 61).
 
 Recorded, behavior unchanged:
 - Missing soil reweighting: Section 7.6 does not give a formula when `soil_pctl` is missing. The engine renormalizes the remaining weights (flood 0.40/0.75 and 0.35/0.75; drought 0.35/0.55 and 0.20/0.55) and sets `degraded`. See `docs/methodology.md`. This now also fires for soil older than 7 days.

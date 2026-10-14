@@ -133,6 +133,26 @@ def test_risk_series(client: TestClient, loaded: sessionmaker[Session]) -> None:
     assert [p["date"] for p in short] == ["2022-06-15", "2022-06-16"]
 
 
+def test_risk_series_date_param(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    """date= anchors the window end; data after that date is excluded."""
+    # Fixture has June 14, 15, 16 for sylhet.  Request window ending at June 15.
+    body = client.get("/api/risk/sylhet", params={"date": "2022-06-15"}).json()
+    assert body["district_id"] == "sylhet"
+    dates = [p["date"] for p in body["series"]]
+    assert dates[-1] == "2022-06-15"      # window ends at the requested date
+    assert "2022-06-16" not in dates      # latest snapshot is excluded
+    assert "2022-06-14" in dates          # earlier data in the window is included
+
+    # days=2 + date=2022-06-15: window is exactly 2022-06-14 to 2022-06-15
+    two_day = client.get("/api/risk/sylhet", params={"date": "2022-06-15", "days": 2}).json()["series"]
+    assert [p["date"] for p in two_day] == ["2022-06-14", "2022-06-15"]
+
+    # days=1 + date=2022-06-14: window is exactly one day
+    one_day = client.get("/api/risk/sylhet", params={"date": "2022-06-14", "days": 1}).json()["series"]
+    assert [p["date"] for p in one_day] == ["2022-06-14"]
+    assert one_day[0]["flood_score"] == 64.0  # matches fixture: flood=84-20
+
+
 def test_risk_series_limits_and_unknown_district(client: TestClient, loaded: sessionmaker[Session]) -> None:
     assert client.get("/api/risk/sylhet", params={"days": 365}).status_code == 200
     assert client.get("/api/risk/sylhet", params={"days": 366}).status_code == 422

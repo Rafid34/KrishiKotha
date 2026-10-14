@@ -72,11 +72,12 @@ def risk_map(
 def risk_series(
     district_id: str,
     days: int = Query(60, ge=1, le=365, description="Window length in days (max 365)"),
+    date: date | None = Query(None, description="YYYY-MM-DD; window ends at this date (default: latest snapshot)"),
     db: Session = Depends(get_db),
 ) -> RiskSeriesOut:
-    """Daily scores with rainfall and soil wetness for the last `days` days with data."""
+    """Daily scores with rainfall and soil wetness for the `days` days ending at `date`."""
     _require_district(db, district_id)
-    last = db.scalar(
+    last = date or db.scalar(
         select(func.max(RiskSnapshot.date)).where(RiskSnapshot.district_id == district_id)
     )
     if last is None:
