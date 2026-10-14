@@ -73,10 +73,22 @@ class ExplainInput(BaseModel):
     raw: float | int | None = None
 
 
+class CoastalFactor(BaseModel):
+    """Salinity multiplier (`s_coast / 100`); applies to the whole additive sum, so it has no weight."""
+
+    name: str
+    raw: float | None  # coastal distance in km
+    value: float | None  # s_coast sub-score, 0 to 100
+    multiplier: float | None  # value / 100
+    source: str
+    data_date: str | None
+
+
 class HazardExplain(BaseModel):
     score: float
     level: Level
     inputs: list[ExplainInput]
+    coastal_factor: CoastalFactor | None = None  # salt only
 
 
 class ExplainOut(BaseModel):

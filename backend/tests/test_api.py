@@ -27,7 +27,14 @@ def _inputs(flood: float) -> dict:
             ],
         },
         "drought": {"score": 5.0, "level": "low", "inputs": [item("soil_pctl", 10.0, 0.45, "NASA POWER GWETROOT", "2022-06-16")]},
-        "salt": {"score": 2.0, "level": "low", "inputs": [item("coastal_proximity", 0.0, 1.0, "Static configuration (non-NASA)", None)]},
+        "salt": {
+            "score": 2.0, "level": "low",
+            "inputs": [
+                item("coastal_proximity", 65.0, 1.0, "Static configuration (non-NASA)", None),
+                item("seasonal_intrusion", 100.0, 0.55, "Calendar assumption (non-NASA)", "2022-06-16"),
+                item("rain_deficit", 0.0, 0.45, "GPM IMERG Final Run V07", "2022-06-16"),
+            ],
+        },
     }
 
 
@@ -147,6 +154,18 @@ def test_risk_explain(client: TestClient, loaded: sessionmaker[Session]) -> None
     assert first["source"] == "GPM IMERG Final Run V07" and first["data_date"] == "2022-06-16"
     assert abs(sum(i["weight"] for i in flood["inputs"]) - 1.0) < 1e-9
     assert body["drought"]["inputs"] and body["salt"]["inputs"]
+    assert flood["coastal_factor"] is None
+
+
+def test_salt_explain_separates_coastal_factor(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    salt = client.get("/api/risk/sylhet/explain", params={"date": "2022-06-16"}).json()["salt"]
+    assert [i["name"] for i in salt["inputs"]] == ["seasonal_intrusion", "rain_deficit"]
+    assert abs(sum(i["weight"] for i in salt["inputs"]) - 1.0) < 1e-9
+    factor = salt["coastal_factor"]
+    assert factor["name"] == "coastal_proximity" and factor["raw"] == 65.0
+    assert factor["value"] == 65.0 and factor["multiplier"] == 0.65
+    assert "weight" not in factor
+    assert salt["score"] == 2.0  # stored score is untouched
 
     default = client.get("/api/risk/sylhet/explain").json()
     assert default["date"] == "2022-06-16"

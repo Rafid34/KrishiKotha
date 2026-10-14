@@ -38,6 +38,7 @@ RETRY_BACKOFF_SECONDS = 3.0
 MAX_CONSECUTIVE_FAILURES = 5
 RAIN_WINDOW_DAYS = 30  # R30 needs 30 daily values ending at the effective date
 TMAX_WINDOW_DAYS = 7
+MAX_SOIL_AGE_DAYS = 7  # POWER soil values older than this count as missing (degraded fallback)
 POWER_VERSION = "V2"  # POWER API major version; the response header reports 2.x
 IMERG_VERSION = "V07"
 RUN_SOURCE = {"late": "IMERG_LATE", "final": "IMERG_FINAL"}
@@ -78,16 +79,22 @@ class RunStats:
 
 
 def power_indicators(frame: pd.DataFrame, day: date) -> PowerIndicators:
-    """Soil wetness (latest value on or before `day`) and 7-day mean `T2M_MAX` from POWER."""
+    """Soil wetness (latest value on or before `day`) and 7-day mean `T2M_MAX` from POWER.
+
+    A soil value more than `MAX_SOIL_AGE_DAYS` old is treated as missing: `soil` and `soil_date`
+    are None, while `soil_stale_days` keeps the age of the expired value for the record.
+    """
     ts = pd.Timestamp(day)
     upto = frame.loc[frame.index <= ts]
 
     soil_series = upto["GWETROOT"].dropna()
     soil = soil_date = stale = None
     if not soil_series.empty:
-        soil = float(soil_series.iloc[-1])
-        soil_date = soil_series.index[-1].date()
-        stale = (day - soil_date).days
+        latest_date = soil_series.index[-1].date()
+        stale = (day - latest_date).days
+        if stale <= MAX_SOIL_AGE_DAYS:
+            soil = float(soil_series.iloc[-1])
+            soil_date = latest_date
 
     window = frame["T2M_MAX"].loc[ts - pd.Timedelta(days=TMAX_WINDOW_DAYS - 1) : ts].dropna()
     tmax7 = float(window.mean()) if not window.empty else None

@@ -12,6 +12,7 @@ from ..db import get_db
 from ..errors import not_found
 from ..models import District, Observation, RiskSnapshot
 from ..schemas import (
+    CoastalFactor,
     DistrictRisk,
     ExplainOut,
     Hazard,
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/api/risk", tags=["risk"])
 
 HAZARDS: tuple[str, ...] = ("drought", "flood", "salt")
 RAIN_SOURCES = ("IMERG_FINAL", "IMERG_LATE")  # Final Run wins when both exist for a date
+COASTAL_INPUT = "coastal_proximity"
 
 
 def _require_district(db: Session, district_id: str) -> District:
@@ -133,21 +135,37 @@ def _explain_block(row: RiskSnapshot, hazard: str) -> HazardExplain:
     def tidy(number: Any) -> Any:
         return round(number, 4) if isinstance(number, float) else number
 
-    items = [
-        {
-            "name": item.get("name", ""),
-            "value": tidy(item.get("value")),
-            "weight": item.get("weight", 0.0),
-            "source": item.get("source", ""),
-            "data_date": item.get("data_date"),
-            "raw": tidy(item.get("raw")),
-        }
-        for item in block.get("inputs", [])
-    ]
+    items = []
+    coastal: CoastalFactor | None = None
+    for item in block.get("inputs", []):
+        if item.get("name") == COASTAL_INPUT:
+            # Multiplier on the additive sum, not a weighted term: report it separately so the
+            # displayed weights sum to 1.0. The stored scores and formula are unchanged.
+            value = item.get("value")
+            coastal = CoastalFactor(
+                name=COASTAL_INPUT,
+                raw=tidy(item.get("raw")),
+                value=tidy(value),
+                multiplier=None if value is None else round(value / 100.0, 4),
+                source=item.get("source", ""),
+                data_date=item.get("data_date"),
+            )
+            continue
+        items.append(
+            {
+                "name": item.get("name", ""),
+                "value": tidy(item.get("value")),
+                "weight": item.get("weight", 0.0),
+                "source": item.get("source", ""),
+                "data_date": item.get("data_date"),
+                "raw": tidy(item.get("raw")),
+            }
+        )
     return HazardExplain(
         score=getattr(row, f"{hazard}_score"),
         level=getattr(row, f"{hazard}_level"),
         inputs=items,
+        coastal_factor=coastal,
     )
 
 

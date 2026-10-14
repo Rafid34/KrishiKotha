@@ -13,7 +13,7 @@ from backend.app.models import Observation, PipelineRun, RiskSnapshot
 from backend.app.services.nasa.offline import OfflineModeError
 from backend.app.services.nasa.power import fetch_power
 from backend.app.services.snapshots import build_snapshot_doc, load_snapshot_doc
-from pipeline.run_pipeline import power_indicators, rain_sums, run_pipeline
+from pipeline.run_pipeline import MAX_SOIL_AGE_DAYS, power_indicators, rain_sums, run_pipeline
 
 START, END = date(2022, 6, 14), date(2022, 6, 16)
 
@@ -52,6 +52,41 @@ def test_power_indicators_stale_soil_and_tmax_window() -> None:
     assert got.tmax7 == pytest.approx((40.0 + 33.0 * 6) / 7)
     empty = power_indicators(frame.iloc[0:0], date(2022, 6, 16))
     assert empty.soil is None and empty.tmax7 is None
+
+
+def test_power_soil_max_age_boundary() -> None:
+    frame = _power_frame(date(2022, 6, 1), date(2022, 6, 16))
+    frame.loc["2022-06-10":, "GWETROOT"] = float("nan")  # last soil value is 2022-06-09
+    at_limit = power_indicators(frame, date(2022, 6, 16))  # exactly 7 days old
+    assert at_limit.soil == 0.9 and at_limit.soil_stale_days == MAX_SOIL_AGE_DAYS == 7
+    expired = power_indicators(frame, date(2022, 6, 17))  # 8 days old
+    assert expired.soil is None and expired.soil_date is None
+    assert expired.soil_stale_days == 8  # age of the expired value is still recorded
+    assert expired.tmax7 == 33.0  # Tmax handling is unchanged
+
+
+def test_expired_soil_triggers_degraded_fallback(session_factory: sessionmaker[Session]) -> None:
+    def old_soil(lat: float, lon: float, start: date, end: date) -> pd.DataFrame:
+        frame = _power_frame(start, end)
+        frame.loc[pd.Timestamp(END - timedelta(days=8)) :, "GWETROOT"] = float("nan")  # last value 2022-06-07
+        return frame
+
+    with session_factory() as db:
+        record = run_pipeline(db, START, END, "late", rain_fetcher=_rain(5.0), power_fetcher=old_soil)
+        assert record.status == "ok"
+
+        def sylhet_on(day: date) -> RiskSnapshot:
+            return db.scalars(
+                select(RiskSnapshot).where(RiskSnapshot.district_id == "sylhet", RiskSnapshot.date == day)
+            ).one()
+
+        fresh = sylhet_on(START)  # soil is 7 days old: still usable
+        assert fresh.degraded is False and fresh.inputs["soil_stale_days"] == 7
+        expired = sylhet_on(END)  # soil is 9 days old: counts as missing
+        assert expired.degraded is True
+        assert expired.inputs["soil_wetness"] is None and expired.inputs["soil_stale_days"] == 9
+        soil_input = next(i for i in expired.inputs["flood"]["inputs"] if i["name"] == "soil_pctl")
+        assert soil_input["value"] is None and soil_input["weight"] == 0.0
 
 
 def test_run_pipeline_writes_scores_observations_and_run(session_factory: sessionmaker[Session]) -> None:

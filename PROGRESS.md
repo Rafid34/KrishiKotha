@@ -7,7 +7,7 @@
 | 2: POWER client and baseline | Done | Verified: 13 tests pass; 8 baseline files written; Sylhet mid-June `rain30_mean` 623.2 mm > Rajshahi 188.1 mm. |
 | 3: GPM IMERG client | Done | Verified: CLI prints 8 values for 2022-06-16 (Sylhet 164.8, Sunamganj 267.6 mm/day, Final Run); 21 tests pass; cached files about 22 KB each; raw granules deleted. |
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
-| 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. |
+| 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. |
 
 ## Phase 0 details
 
@@ -93,3 +93,18 @@ Deviations and open points:
 - `/api/sources` keeps the Section 7.2 list shape, so it does not yet echo `SCORING_CONSTANTS`; decide before Phase 12.
 - The first Final Run attempt failed on a transient Earthdata login error (run row 1 is `failed` in the local DB, not exported). Retries were added.
 - `npm install` vulnerabilities from Phase 0 are still not addressed.
+
+## Phase 5 patch
+
+Changes:
+- POWER soil max age: `MAX_SOIL_AGE_DAYS = 7` in `pipeline/run_pipeline.py`. A latest soil value older than 7 days (8 or more) counts as missing: `power_indicators` returns `soil` and `soil_date` as None, so scoring takes the existing degraded fallback. `soil_stale_days` still records the age of the expired value. Not in Section 7.7, which only says to store stale days; this is an added rule.
+- Salinity explain: `/api/risk/{id}/explain` now returns the `coastal_proximity` entry as `salt.coastal_factor` (`name`, `raw` km, `value` 0 to 100, `multiplier` = value/100, `source`, `data_date`, no weight) and removes it from `salt.inputs`. The remaining weights sum to 1.0 (0.55 + 0.45, or 0.40 + 0.30 + 0.30 with NDVI). `coastal_factor` is null for flood and drought. `score_salt`, stored snapshots and scores are unchanged; the split happens only when building the explain response. This adds a field not in the Section 7.2 example, and `salt.inputs` no longer lists the coastal entry that the Section 7.6 weights table implied.
+- Tests: 61 pass (was 58). Added `test_power_soil_max_age_boundary`, `test_expired_soil_triggers_degraded_fallback` and `test_salt_explain_separates_coastal_factor`; the `test_api.py` salt fixture now has a realistic input list.
+
+Not done:
+- `date` query on `GET /api/risk/{district_id}`: skipped because Section 7.2 defines only `days` for this route (`date` appears only on `/api/risk` and `/explain`). The series still ends at the district's latest snapshot date. Decide whether to add `date` in the spec first.
+
+Recorded, behavior unchanged:
+- Missing soil reweighting: Section 7.6 does not give a formula when `soil_pctl` is missing. The engine renormalizes the remaining weights (flood 0.40/0.75 and 0.35/0.75; drought 0.35/0.55 and 0.20/0.55) and sets `degraded`. See `docs/methodology.md`. This now also fires for soil older than 7 days.
+- Missing Tmax7: `power_indicators` gives `tmax7` None when no `T2M_MAX` exists in the 7-day window. `score_drought` then treats the heat sub-score as 0 but keeps its full 0.20 weight, so there is no reweighting and the score is biased low. The pipeline only sets drought `degraded` and `inputs.tmax_missing`. This differs from the soil case. If soil and Tmax7 are both missing, the 0 heat score still gets 0.20/0.55 of the weight.
+- Salinity degraded flag contradiction: Section 7.6 says salinity without NDVI is `degraded = false` (documented Level 1 formula), while Section 4 F2.2 says a pending or failed NDVI task falls back to the formula without NDVI with `degraded: true`. Level 1 has no NDVI, so the code follows 7.6 (`degraded` false). Revisit when Phase 10 adds NDVI. The spec should name the winning rule.
