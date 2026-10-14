@@ -35,3 +35,12 @@
 - Error format: every route, including framework 404/405/422 responses, returns `{"error": {"code", "message"}}`.
 - Response extras beyond the Section 7.2 examples: `/explain` returns all three hazards (flood, drought, salt), each with `level`, and each input also has `raw`.
 - Observed behaviour worth revisiting in Phase 12: IMERG rainfall (mm) is scored against a POWER `PRECTOTCORR` baseline, two different products. Sylhet flood is already 96 on 2022-05-15 (a real mid-May flood) and stays above 60 for the whole period, so the "first moderate" date for the backtest may fall well before June.
+
+## Phase 6 decisions (advice engine, parser, SMS simulator API)
+
+- Overlapping crop stages: Where two stages overlap in a month (e.g. Aman in July is in both nursery and transplanting), the later stage in `crops.json` order wins (`transplanting`). If a date falls outside all stages, stage is `off_season` with 0.7 sensitivity for all hazards.
+- High drought advice for non-Aman / other stages: The spec defines `drought_high_transplant` specifically for Aman rice in nursery or transplanting stages. When drought effective score is High (>= 70) for other crops (Boro, Aus) or other growth stages, advice falls back to `drought_moderate_any` to ensure farmers receive irrigation guidance rather than incorrectly receiving `none_low`.
+- Inbound SMS simulator replies and logging: For registration requests (`<DISTRICT> <CROP>`), the simulator returns two replies: `welcome` and the hazard advice for the latest district snapshot. Both outbound replies are logged in `message_logs` (direction `out`, channel `sim`), creating exactly two `message_logs` rows.
+- 134-character limit: Enforced strictly in `composer.py` on Unicode NFC-normalized Bangla text (`text_bn`). Any rendered string exceeding 134 characters raises `MessageLengthExceededError`.
+- Message wording: All templates describe observed conditions only (past rainfall, soil moisture, dry soil) and contain no forecast claims.
+

@@ -8,6 +8,7 @@
 | 3: GPM IMERG client | Done | Verified: CLI prints 8 values for 2022-06-16 (Sylhet 164.8, Sunamganj 267.6 mm/day, Final Run); 21 tests pass; cached files about 22 KB each; raw granules deleted. |
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
 | 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. Spec Section 7.2 `date` param on `GET /api/risk/{district_id}` implemented: 62 tests pass. |
+| 6: Advice engine, parser, SMS simulator API | Done | Verified: 140 tests pass (33 in `test_advice.py`, 38 in `test_parser.py`, 16 in `test_api.py`); verbatim Bangla templates from Section 7.4; 134-character limit enforced with `MessageLengthExceededError`; `POST /api/sim/sms` returns Bangla replies (welcome + advice) and logs 2 messages; observed conditions only, no forecasts. |
 
 ## Spec patch (2026-10-15)
 
@@ -167,3 +168,76 @@ Recorded, behavior unchanged:
 - Missing soil reweighting: Section 7.6 does not give a formula when `soil_pctl` is missing. The engine renormalizes the remaining weights (flood 0.40/0.75 and 0.35/0.75; drought 0.35/0.55 and 0.20/0.55) and sets `degraded`. See `docs/methodology.md`. This now also fires for soil older than 7 days.
 - Missing Tmax7: `power_indicators` gives `tmax7` None when no `T2M_MAX` exists in the 7-day window. `score_drought` then treats the heat sub-score as 0 but keeps its full 0.20 weight, so there is no reweighting and the score is biased low. The pipeline only sets drought `degraded` and `inputs.tmax_missing`. This differs from the soil case. If soil and Tmax7 are both missing, the 0 heat score still gets 0.20/0.55 of the weight.
 - Salinity degraded flag contradiction: Section 7.6 says salinity without NDVI is `degraded = false` (documented Level 1 formula), while Section 4 F2.2 says a pending or failed NDVI task falls back to the formula without NDVI with `degraded: true`. Level 1 has no NDVI, so the code follows 7.6 (`degraded` false). Revisit when Phase 10 adds NDVI. The spec should name the winning rule.
+
+## Phase 6 details
+
+Implemented Phase 6: Advice engine, parser, and SMS simulator API (Sections 7.4, 7.5, 9).
+
+### Implemented components
+- **`backend/app/services/advice/stages.py`**:
+  - `get_crop_stage`: maps `(crop_id, date)` to crop stage key and hazard sensitivities (`flood`, `drought`, `salt`).
+  - Supports wrap-around stages (e.g. Boro Dec to Jan).
+  - Implements overlapping stage rule from `docs/methodology.md`: later stage in `crops.json` order wins (e.g., Aman July resolves to `transplanting`).
+  - Dates falling outside all stages map to `off_season` with 0.7 sensitivity across all hazards.
+- **`backend/app/services/advice/rules.py`**:
+  - `select_advice_rule`: evaluates hazards in order `(flood, drought, salt)`.
+  - Effective score is `score * crop_stage_sensitivity`, capped at 100.
+  - Highest effective score at or above 40 wins. Ties broken by evaluation order (`flood` > `drought` > `salt`).
+  - If no hazard >= 40, returns `none_low` with level `low`.
+  - Implements rule mapping:
+    - Flood: `flood_high_harvest` for grain_filling_harvest stage; `flood_high_early` for other stages; `flood_moderate_any` for moderate.
+    - Drought: `drought_high_transplant` for Aman rice in nursery or transplanting; `drought_moderate_any` for moderate or other high cases.
+    - Salinity: `salt_high_any` for high or moderate salinity.
+- **`backend/app/services/advice/composer.py`**:
+  - `compose_advice`: loads templates from `data/static/advice_templates.json`.
+  - Normalises Unicode text to NFC (`unicodedata.normalize("NFC", ...)`).
+  - Enforces strict 134-character limit on Bangla text (`MAX_BANGLA_SMS_CHARS = 134`), raising `MessageLengthExceededError` if exceeded.
+  - Verbatim templates from Section 7.4; messages describe observed conditions only with no forecast wording.
+- **`backend/app/services/messaging/parser.py`**:
+  - `parse_message`: parses English and Bangla district and crop names with whitespace and case tolerance.
+  - Commands: `HELP` / `সাহায্য`, `STOP` / `বন্ধ`, `1` / `১`, `2` / `২` (feedback loop).
+- **`backend/app/services/messaging/gateway.py` & `sim_gateway.py`**:
+  - `MessagingGateway` abstract interface with `send_sms`.
+  - `SimGateway`: in-memory simulator gateway recording sent messages without network calls.
+- **`backend/app/services/messaging/handler.py`**:
+  - `handle_inbound_sms`: parses inbound SMS, calculates salted SHA-256 phone hash, upserts `Subscriber`, generates replies, and logs messages.
+  - Registration command (`<DISTRICT> <CROP>`): generates two replies (`welcome` and latest snapshot advice) and creates exactly two `MessageLog` records (`direction="out"`, `channel="sim"`).
+  - Stop command (`STOP`): sets `subscriber.active = False`, logs and returns `stopped` message.
+  - Help / unknown command: logs and returns `help` message.
+- **`backend/app/schemas.py`**:
+  - Added `AdviceRequest`, `AdviceOut`, `SimSmsRequest`, `SimReply`, `SimSmsOut`.
+  - Resolved Python 3.11 type evaluation collision by importing `date as dt_date` to prevent field name shadowing.
+- **`backend/app/routers/advice.py`**:
+  - `POST /api/advice`: returns `AdviceOut` for given district, crop, and optional date. Validates district and crop exist (404 on unknown).
+- **`backend/app/routers/messaging.py`**:
+  - `POST /api/sim/sms`: accepts `{"from": "...", "body": "..."}`, calls `handle_inbound_sms`, returns replies and `subscriber_id`.
+- **`backend/app/main.py`**:
+  - Mounted `advice.router` and `messaging.router`.
+
+### Tests (140 pass, was 67)
+- **`backend/tests/test_advice.py`** (33 tests):
+  - `test_verbatim_templates_from_spec`: asserts all 10 templates match Section 7.4 verbatim in Bangla and English.
+  - `test_bangla_length_limit_all_templates`: verifies all templates are <= 134 characters.
+  - `test_134_char_limit_enforced_by_composer`: verifies `MessageLengthExceededError` is raised when text exceeds 134 characters.
+  - `test_messages_describe_observed_conditions_only_never_forecasts`: asserts absence of forecast terms (`next week`, `forecast`, `আগামী সপ্তাহ`, `পূর্বাভাস`).
+  - `test_all_templates_render_for_8_districts_by_3_crops`: parametrized test for all 24 district × crop combinations checking no unresolved placeholders.
+  - `test_rule_selection_order_and_priorities`: checks flood/drought/salt priority, tie-breaking, and `none_low` fallback.
+  - `test_flood_rule_conditions`, `test_drought_rule_conditions`, `test_salt_rule_conditions`: verifies stage and level branches.
+  - `test_crop_stages_mapping_overlap_and_offseason`: tests overlap resolution, wrap-around months, and off-season sensitivities.
+- **`backend/tests/test_parser.py`** (38 tests):
+  - 17 test cases for English and Bangla district and crop parsing with mixed case, extra spaces, and filler words.
+  - 8 test cases for `HELP` and `STOP` commands in English and Bangla.
+  - 4 test cases for feedback commands (`1`, `2`, `১`, `২`).
+  - 9 test cases for invalid inputs, missing tokens, and empty strings.
+- **`backend/tests/test_api.py`** (+4 tests):
+  - `test_advice_endpoint`: verifies 200 OK on valid inputs, 404 on unknown district or crop.
+  - `test_sim_sms_roundtrip`: verifies subscriber creation, two replies (welcome and advice), exactly two `message_logs` entries, `STOP` deactivation, and `HELP` response.
+
+### Verification
+- `pytest`: 140 passed in 5.4s.
+- `POST /api/sim/sms` with `{"from": "+8801700000000", "body": "SYLHET AMAN"}` executed and verified live:
+  - Status: 200 OK
+  - Reply 1: `কৃষি কথায় স্বাগতম। আপনার এলাকা ও ফসল নথিভুক্ত হয়েছে। আমরা সতর্কবার্তা পাঠাব।`
+  - Reply 2: `মাটির আর্দ্রতা কমছে। সম্ভব হলে ভোরে বা সন্ধ্যায় হালকা সেচ দিন।`
+  - `subscriber_id`: 1
+

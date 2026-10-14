@@ -222,3 +222,97 @@ def test_unknown_route_uses_error_format(client: TestClient) -> None:
     resp = client.get("/api/nope")
     assert resp.status_code == 404
     assert resp.json()["error"]["code"] == "not_found"
+
+
+def test_advice_endpoint(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    # 1. Success for Sylhet Aman on 2022-06-16
+    resp = client.post(
+        "/api/advice",
+        json={"district_id": "sylhet", "crop_id": "aman", "date": "2022-06-16"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["rule_id"] == "flood_high_early"
+    assert data["hazard"] == "flood"
+    assert data["level"] == "high"
+    assert "বন্যার ঝুঁকি বেশি" in data["text_bn"]
+    assert "Flood risk is high" in data["text_en"]
+    assert data["audio_url"] is None
+
+    # 2. Unknown district -> 404
+    resp_dist = client.post(
+        "/api/advice",
+        json={"district_id": "nowhere", "crop_id": "aman"},
+    )
+    assert resp_dist.status_code == 404
+    assert resp_dist.json()["error"]["code"] == "not_found"
+
+    # 3. Unknown crop -> 404
+    resp_crop = client.post(
+        "/api/advice",
+        json={"district_id": "sylhet", "crop_id": "wheat"},
+    )
+    assert resp_crop.status_code == 404
+    assert resp_crop.json()["error"]["code"] == "not_found"
+
+
+def test_sim_sms_roundtrip(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    """Simulator round trip: POST /api/sim/sms with SYLHET AMAN creates subscriber, two replies, two message_logs."""
+    resp = client.post(
+        "/api/sim/sms",
+        json={"from": "+8801700000000", "body": "SYLHET AMAN"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["replies"]) == 2
+    assert "স্বাগতম" in data["replies"][0]["text"]
+    assert "বন্যার ঝুঁকি বেশি" in data["replies"][1]["text"]
+    sub_id = data["subscriber_id"]
+    assert sub_id is not None
+
+    with loaded() as db:
+        from backend.app.models import MessageLog, Subscriber
+
+        # Verify subscriber created
+        sub = db.get(Subscriber, sub_id)
+        assert sub is not None
+        assert sub.phone_e164 == "+8801700000000"
+        assert sub.district_id == "sylhet"
+        assert sub.crop_id == "aman"
+        assert sub.active is True
+
+        # Verify exactly two message_logs rows created
+        logs = db.query(MessageLog).filter_by(subscriber_id=sub_id).all()
+        assert len(logs) == 2
+        assert logs[0].rule_id == "welcome"
+        assert logs[0].direction == "out"
+        assert logs[0].channel == "sim"
+        assert logs[1].rule_id == "flood_high_early"
+        assert logs[1].direction == "out"
+        assert logs[1].channel == "sim"
+
+    # Test STOP command deactivates subscriber
+    resp_stop = client.post(
+        "/api/sim/sms",
+        json={"from": "+8801700000000", "body": "STOP"},
+    )
+    assert resp_stop.status_code == 200
+    stop_data = resp_stop.json()
+    assert len(stop_data["replies"]) == 1
+    assert "বন্ধ হয়েছে" in stop_data["replies"][0]["text"]
+
+    with loaded() as db:
+        from backend.app.models import Subscriber
+        sub = db.get(Subscriber, sub_id)
+        assert sub.active is False
+
+    # Test HELP command
+    resp_help = client.post(
+        "/api/sim/sms",
+        json={"from": "+8801700000000", "body": "HELP"},
+    )
+    assert resp_help.status_code == 200
+    help_data = resp_help.json()
+    assert len(help_data["replies"]) == 1
+    assert "SYLHET AMAN" in help_data["replies"][0]["text"]
+

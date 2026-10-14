@@ -1,9 +1,10 @@
 """Pydantic response models for the read API (Section 7.2)."""
 from __future__ import annotations
 
+from datetime import date as dt_date
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Level = Literal["low", "moderate", "high"]
 Hazard = Literal["drought", "flood", "salt"]
@@ -116,3 +117,36 @@ class PipelineStatusOut(BaseModel):
     finished_at: str | None
     status: str
     detail: dict[str, Any]
+
+
+class AdviceRequest(BaseModel):
+    district_id: str
+    crop_id: str
+    date: dt_date | None = None
+    language: str = "bn"
+
+
+class AdviceOut(BaseModel):
+    rule_id: str
+    text_bn: str
+    text_en: str
+    hazard: str | None = None
+    level: str
+    audio_url: str | None = None
+
+
+class SimSmsRequest(BaseModel):
+    from_: str = Field(..., alias="from")
+    body: str
+
+    model_config = {"populate_by_name": True}
+
+
+class SimReply(BaseModel):
+    text: str
+
+
+class SimSmsOut(BaseModel):
+    replies: list[SimReply]
+    subscriber_id: int | None = None
+
