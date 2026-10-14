@@ -19,7 +19,45 @@ Changes to `PROJECT_SPEC.md` only (no code, tests, or data files changed):
 - **Section 7.7**: replaced the stale-days sentence with the 7-day max-age rule (`soil_stale_days` stored even when expired; older value counts as missing per Section 7.6).
 - **F2.2**: changed fallback from `degraded: true` to the documented Level 1 formula (`degraded: false`), matching Section 7.6.
 
-Open code follow-up: Section 7.6 and the new missing-inputs paragraph specify that a missing Tmax7 should drop the heat term and **renormalize** the remaining drought weights. The current `score_drought` in `scoring.py` instead zeroes `sub_heat` and keeps the full 0.20 weight, biasing the score low. A code change to `score_drought` (and its tests) is needed to match the spec.
+~~Open code follow-up: Section 7.6 and the new missing-inputs paragraph specify that a missing Tmax7 should drop the heat term and **renormalize** the remaining drought weights. The current `score_drought` in `scoring.py` instead zeroes `sub_heat` and keeps the full 0.20 weight, biasing the score low. A code change to `score_drought` (and its tests) is needed to match the spec.~~ → **Resolved** in the Section 7.6 missing-inputs implementation below.
+
+## Section 7.6 missing-inputs implementation (2026-10-15)
+
+Implemented the full missing-inputs paragraph from Section 7.6 for Tmax7 and soil wetness.
+
+### Changes
+
+**`backend/app/services/risk/scoring.py`**
+- `score_drought`: restructured the heat-anomaly branch to track a `heat_missing` flag when none of `d_heat`, `tmax7+tbase`, or `t_anomaly` is provided. The scoring section now covers all four combinations of soil × heat availability:
+  1. Both available: full formula (unchanged).
+  2. Soil missing, heat available: existing reweighting over rain + heat (unchanged).
+  3. Heat missing, soil available (**new**): drop heat term, renormalize soil and rain. `w_soil = 0.45/0.80 = 0.5625`, `w_rain = 0.35/0.80 = 0.4375`.
+  4. Both missing (**new**): rain term only, `weight = 1.0`.
+- In all degraded cases `heat_anomaly` entry has `value: None, weight: 0.0`; active weights sum to 1.0.
+- `score_drought` now returns two new top-level flags: `tmax_missing: bool` and `soil_missing: bool`.
+- `score_flood` now returns one new top-level flag: `soil_missing: bool`.
+- Redundant pipeline patch `if tmax_missing: drought = {**drought, "degraded": True}` removed from `score_district_day`; `score_drought` now sets `degraded` internally.
+
+**`pipeline/run_pipeline.py`**
+- `score_district_day`: added `soil_missing = power.soil is None` and surfaced it in the outer `inputs` dict as `inputs["soil_missing"]`, consistent with the existing `inputs["tmax_missing"]`.
+- Updated docstring to describe the drop-and-renormalize behavior for both missing inputs.
+
+### Tests (67 pass, was 62)
+
+Added five new tests in `backend/tests/test_scoring.py`:
+- `test_drought_missing_tmax_drops_heat_term_and_renormalizes`: verifies heat entry has `value: None, weight: 0.0`; verifies active weights sum to 1.0; checks exact renormalized score (soil_pctl=10, deficit=0.80 → 94.38).
+- `test_drought_missing_tmax_score_exceeds_zero_heat_method`: confirms new score (94.38) > old biased score (75.5) for identical remaining inputs.
+- `test_drought_missing_tmax_sets_degraded_and_flag`: `degraded=True`, `tmax_missing=True`; full-input call gives `degraded=False`, both flags False.
+- `test_soil_missing_flag_for_flood_and_drought`: `soil_missing=True` on flood and drought when soil is absent; `soil_missing=False` when present.
+- `test_drought_both_soil_and_tmax_missing`: only rain term used with `weight=1.0`; active weights still sum to 1.0.
+
+Updated two existing pipeline tests in `backend/tests/test_pipeline.py`:
+- `test_expired_soil_triggers_degraded_fallback`: added `assert expired.inputs["soil_missing"] is True`.
+- `test_missing_soil_marks_degraded`: added `assert row.inputs["soil_missing"] is True`.
+
+### Snapshot impact
+
+Inspected `data/snapshots/sylhet_2022.json` (376 rows, 8 districts) and `data/snapshots/latest_30d.json` (240 rows). **No rows have `tmax_missing=True` or `soil_wetness=None`**: all rows were scored with complete inputs. Re-exporting would produce structurally different JSON (new `tmax_missing`/`soil_missing` keys in the flood and drought sub-dicts, and `soil_missing: false` in the outer inputs dict) but every stored `drought_score`, `flood_score`, and `salt_score` value would remain identical. No snapshot files were modified.
 
 ## Phase 0 details
 

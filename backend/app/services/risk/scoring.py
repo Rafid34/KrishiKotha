@@ -256,6 +256,7 @@ def score_flood(
         "level": level_for(rounded_score),
         "inputs": inputs,
         "degraded": degraded,
+        "soil_missing": sub_soil is None,
     }
 
 
@@ -316,6 +317,10 @@ def score_drought(
         sub_soil = None
 
     # 3. Heat anomaly
+    # heat_missing stays True only when none of the heat inputs are provided (Tmax7 absent).
+    heat_missing = False
+    sub_heat: float | None
+    raw_temp_anom: float | None
     if d_heat is not None:
         sub_heat = clamp(float(d_heat), 0.0, 100.0)
         raw_temp_anom = (sub_heat / 100.0) * DROUGHT_HEAT_MAX_ANOMALY
@@ -326,10 +331,13 @@ def score_drought(
         raw_temp_anom = float(t_anomaly)
         sub_heat = clamp((raw_temp_anom / DROUGHT_HEAT_MAX_ANOMALY) * 100.0, 0.0, 100.0)
     else:
-        raw_temp_anom = 0.0
-        sub_heat = 0.0
+        # Tmax7 unavailable: heat term will be dropped and remaining weights renormalized.
+        heat_missing = True
+        raw_temp_anom = None
+        sub_heat = None
 
-    if sub_soil is not None:
+    if sub_soil is not None and sub_heat is not None:
+        # All inputs available: full formula (Section 7.6)
         degraded = False
         score = (
             WEIGHT_DROUGHT_SOIL * sub_soil
@@ -359,8 +367,8 @@ def score_drought(
                 "weight": WEIGHT_DROUGHT_HEAT,
             },
         ]
-    else:
-        # Fallback when soil is missing: reweight rain and heat inputs
+    elif sub_soil is None and sub_heat is not None:
+        # Soil missing: reweight rain and heat inputs (existing behavior)
         degraded = True
         available_weight = WEIGHT_DROUGHT_RAIN + WEIGHT_DROUGHT_HEAT
         w_rain = WEIGHT_DROUGHT_RAIN / available_weight
@@ -389,6 +397,63 @@ def score_drought(
                 "weight": round(w_heat, 4),
             },
         ]
+    elif sub_soil is not None and sub_heat is None:
+        # Tmax7 missing: drop heat term and renormalize soil and rain (Section 7.6)
+        degraded = True
+        available_weight = WEIGHT_DROUGHT_SOIL + WEIGHT_DROUGHT_RAIN
+        w_soil = WEIGHT_DROUGHT_SOIL / available_weight
+        w_rain = WEIGHT_DROUGHT_RAIN / available_weight
+        score = w_soil * sub_soil + w_rain * sub_rain
+        inputs = [
+            {
+                "name": "soil_pctl",
+                "raw": raw_soil,
+                "value": sub_soil,
+                "sub_score": sub_soil,
+                "weight": round(w_soil, 4),
+            },
+            {
+                "name": "rain_deficit",
+                "raw": raw_deficit,
+                "value": sub_rain,
+                "sub_score": sub_rain,
+                "weight": round(w_rain, 4),
+            },
+            {
+                "name": "heat_anomaly",
+                "raw": None,
+                "value": None,
+                "sub_score": None,
+                "weight": 0.0,
+            },
+        ]
+    else:
+        # Both soil and Tmax7 missing: only rain term
+        degraded = True
+        score = sub_rain
+        inputs = [
+            {
+                "name": "soil_pctl",
+                "raw": None,
+                "value": None,
+                "sub_score": None,
+                "weight": 0.0,
+            },
+            {
+                "name": "rain_deficit",
+                "raw": raw_deficit,
+                "value": sub_rain,
+                "sub_score": sub_rain,
+                "weight": 1.0,
+            },
+            {
+                "name": "heat_anomaly",
+                "raw": None,
+                "value": None,
+                "sub_score": None,
+                "weight": 0.0,
+            },
+        ]
 
     clamped_score = clamp(score, 0.0, 100.0)
     rounded_score = round(clamped_score, 2)
@@ -397,6 +462,8 @@ def score_drought(
         "level": level_for(rounded_score),
         "inputs": inputs,
         "degraded": degraded,
+        "tmax_missing": heat_missing,
+        "soil_missing": sub_soil is None,
     }
 
 

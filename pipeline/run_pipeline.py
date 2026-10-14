@@ -158,7 +158,8 @@ def score_district_day(
     """Score one district on one date; returns the column values for a `RiskSnapshot`.
 
     `sums` must hold non-null 3, 7 and 30 day rainfall. A missing soil value or missing
-    7-day `T2M_MAX` mean sets `degraded` (the scoring engine reweights the soil case).
+    7-day `T2M_MAX` mean sets `degraded`; the scoring engine drops the missing term and
+    renormalizes the remaining weights (Section 7.6).
     """
     r3, r7, r30 = sums[3], sums[7], sums[RAIN_WINDOW_DAYS]
     assert r3 is not None and r7 is not None and r30 is not None
@@ -174,8 +175,7 @@ def score_district_day(
         float(district["coastal_distance_km"]), date_val=day, r30=r30, b30_mean=base["rain30_mean"]
     )
     tmax_missing = power.tmax7 is None
-    if tmax_missing:
-        drought = {**drought, "degraded": True}
+    soil_missing = power.soil is None
 
     label = RUN_LABEL[run]
     inputs = {
@@ -189,6 +189,7 @@ def score_district_day(
         "tmax_baseline": base["tmax_mean"],
         "rain30_baseline": base["rain30_mean"],
         "tmax_missing": tmax_missing,
+        "soil_missing": soil_missing,
     }
     sources = {
         "rain": {

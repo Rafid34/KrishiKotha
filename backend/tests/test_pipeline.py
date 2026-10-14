@@ -85,6 +85,7 @@ def test_expired_soil_triggers_degraded_fallback(session_factory: sessionmaker[S
         expired = sylhet_on(END)  # soil is 9 days old: counts as missing
         assert expired.degraded is True
         assert expired.inputs["soil_wetness"] is None and expired.inputs["soil_stale_days"] == 9
+        assert expired.inputs["soil_missing"] is True  # Section 7.6: expired soil sets soil_missing
         soil_input = next(i for i in expired.inputs["flood"]["inputs"] if i["name"] == "soil_pctl")
         assert soil_input["value"] is None and soil_input["weight"] == 0.0
 
@@ -125,6 +126,8 @@ def test_missing_soil_marks_degraded(session_factory: sessionmaker[Session]) -> 
         assert record.status == "ok"
         row = db.scalars(select(RiskSnapshot)).first()
         assert row is not None and row.degraded is True
+        # Section 7.6: missing soil sets inputs.soil_missing
+        assert row.inputs["soil_missing"] is True
 
 
 def test_failed_imerg_day_skips_incomplete_windows(session_factory: sessionmaker[Session]) -> None:

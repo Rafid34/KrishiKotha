@@ -222,6 +222,89 @@ def test_salt_with_ndvi_level_2():
     assert veg_input["value"] == 100.0
 
 
+def test_drought_missing_tmax_drops_heat_term_and_renormalizes():
+    """Section 7.6: missing Tmax7 drops heat term and renormalizes remaining drought weights to 1.0."""
+    # soil_pctl=10 -> d_soil=90; deficit=0.80 -> d_rain=100; tmax7 absent
+    res = score_drought(soil_pctl=10.0, deficit=0.80)  # no tmax7/tbase
+    assert res["degraded"] is True
+    assert res["tmax_missing"] is True
+    assert res["soil_missing"] is False
+
+    # Renormalized weights: w_soil=0.45/0.80, w_rain=0.35/0.80
+    w_soil = WEIGHT_DROUGHT_SOIL / (WEIGHT_DROUGHT_SOIL + WEIGHT_DROUGHT_RAIN)
+    w_rain = WEIGHT_DROUGHT_RAIN / (WEIGHT_DROUGHT_SOIL + WEIGHT_DROUGHT_RAIN)
+    expected = round(clamp(w_soil * 90.0 + w_rain * 100.0, 0.0, 100.0), 2)
+    assert res["score"] == expected  # 0.5625*90 + 0.4375*100 = 50.625 + 43.75 = 94.38
+
+    # Heat entry is dropped (weight 0, value None)
+    heat_inp = next(i for i in res["inputs"] if i["name"] == "heat_anomaly")
+    assert heat_inp["value"] is None
+    assert heat_inp["weight"] == 0.0
+
+    # Active weights sum to 1.0
+    total_weight = sum(i["weight"] for i in res["inputs"])
+    assert round(total_weight, 10) == 1.0
+
+
+def test_drought_missing_tmax_score_exceeds_zero_heat_method():
+    """New renormalized score is higher than the previous method (zeroed sub_heat, full 0.20 weight)."""
+    # soil_pctl=10, deficit=0.80: old method -> 0.45*90 + 0.35*100 + 0.20*0 = 75.5
+    res = score_drought(soil_pctl=10.0, deficit=0.80)
+    old_method_score = round(
+        WEIGHT_DROUGHT_SOIL * 90.0 + WEIGHT_DROUGHT_RAIN * 100.0 + WEIGHT_DROUGHT_HEAT * 0.0, 2
+    )
+    assert res["score"] > old_method_score  # 94.38 > 75.5
+
+
+def test_drought_missing_tmax_sets_degraded_and_flag():
+    """Section 7.6: missing Tmax7 sets degraded: true and tmax_missing: true."""
+    res = score_drought(soil_pctl=50.0, deficit=0.5)  # no tmax7
+    assert res["degraded"] is True
+    assert res["tmax_missing"] is True
+
+    # Full inputs: no flags set
+    full = score_drought(soil_pctl=50.0, deficit=0.5, tmax7=30.0, tbase=30.0)
+    assert full["degraded"] is False
+    assert full["tmax_missing"] is False
+    assert full["soil_missing"] is False
+
+
+def test_soil_missing_flag_for_flood_and_drought():
+    """Section 7.6: missing soil sets soil_missing for both flood and drought."""
+    # Flood: soil absent
+    flood_miss = score_flood(rain3_pctl=50.0, rain7_pctl=50.0)  # no soil_pctl
+    assert flood_miss["soil_missing"] is True
+    assert flood_miss["degraded"] is True
+
+    # Flood: soil present
+    flood_ok = score_flood(rain3_pctl=50.0, rain7_pctl=50.0, soil_pctl=50.0)
+    assert flood_ok["soil_missing"] is False
+    assert flood_ok["degraded"] is False
+
+    # Drought: soil absent (heat present)
+    drought_miss = score_drought(deficit=0.5, tmax7=30.0, tbase=28.0)  # no soil
+    assert drought_miss["soil_missing"] is True
+    assert drought_miss["degraded"] is True
+
+    # Drought: soil present
+    drought_ok = score_drought(soil_pctl=50.0, deficit=0.5, tmax7=30.0, tbase=28.0)
+    assert drought_ok["soil_missing"] is False
+
+
+def test_drought_both_soil_and_tmax_missing():
+    """When both soil and Tmax7 are absent only the rain term is used with weight 1.0."""
+    res = score_drought(deficit=0.80)  # no soil, no tmax7
+    assert res["degraded"] is True
+    assert res["tmax_missing"] is True
+    assert res["soil_missing"] is True
+    # Only rain: d_rain = min(100, 0.80 * 125) = 100
+    assert res["score"] == 100.0
+    rain_inp = next(i for i in res["inputs"] if i["name"] == "rain_deficit")
+    assert rain_inp["weight"] == 1.0
+    total_weight = sum(i["weight"] for i in res["inputs"])
+    assert round(total_weight, 10) == 1.0
+
+
 def test_scoring_determinism():
     """Verify that scoring functions produce identical outputs for identical inputs."""
     flood_1 = score_flood(rain3_pctl=65.2, rain7_pctl=71.8, soil_pctl=45.0)
