@@ -10,3 +10,7 @@
 - Baseline files store the full sorted samples (about 620 values per sample per day of year), rounded (rain to 0.1 mm, soil wetness to 0.001) and written compactly. This is about 3.2 MB per district, 25 MB for all eight.
 - Baseline `ndvi_mean` is left null until Level 2.
 - POWER requests use one call per district for the full 2001-2020 range. Raw responses are cached under `data/cache/power/` (gitignored).
+- IMERG raw granules are downloaded into a `tempfile.TemporaryDirectory`, so they are deleted as soon as the clipped file is written (and on any failure). Only `data/cache/imerg/{run}_{YYYYMMDD}.nc` (about 22 KB each) is kept.
+- District rainfall is the plain mean of non-null 0.1 degree cells whose centres fall inside centroid plus or minus 0.25 degrees (no area weighting; cells are about 11 km square). A box with no valid cell gives null.
+- `accumulate()` reads only the cache, never the network. A day with no cached file or an all-null box counts as missing; the total sums the days that are available and is null when none are.
+- `fetch_day()` checks that the granule's `time` matches the requested date and fails loudly otherwise. It downloads the first search result only.

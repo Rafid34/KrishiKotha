@@ -28,8 +28,18 @@ class Settings(BaseSettings):
     earthdata_username: str = ""
     earthdata_password: str = ""
     power_api_base: str = "https://power.larc.nasa.gov/api"
+    cmr_base: str = "https://cmr.earthdata.nasa.gov/search"
+    bbox_west: float = 88.0
+    bbox_south: float = 20.5
+    bbox_east: float = 92.7
+    bbox_north: float = 26.7
     baseline_start_year: int = 2001
     baseline_end_year: int = 2020
+
+    @property
+    def bbox(self) -> tuple[float, float, float, float]:
+        """Bangladesh bounding box as (west, south, east, north)."""
+        return (self.bbox_west, self.bbox_south, self.bbox_east, self.bbox_north)
 
     @property
     def cors_origin_list(self) -> list[str]:
