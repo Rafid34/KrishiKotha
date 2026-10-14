@@ -1,1 +1,34 @@
-[]
+{
+  "off_season": {"flood": 0.7, "drought": 0.7, "salt": 0.7},
+  "crops": [
+    {
+      "id": "aman", "name_en": "Aman rice", "name_bn": "আমন ধান",
+      "stages": [
+        {"key": "nursery", "start_month": 6, "end_month": 7, "flood": 1.0, "drought": 1.2, "salt": 0.8},
+        {"key": "transplanting", "start_month": 7, "end_month": 8, "flood": 1.1, "drought": 1.2, "salt": 0.9},
+        {"key": "vegetative", "start_month": 8, "end_month": 9, "flood": 1.0, "drought": 1.0, "salt": 1.0},
+        {"key": "flowering", "start_month": 9, "end_month": 10, "flood": 1.1, "drought": 1.2, "salt": 1.0},
+        {"key": "grain_filling_harvest", "start_month": 11, "end_month": 12, "flood": 1.3, "drought": 0.5, "salt": 0.6}
+      ]
+    },
+    {
+      "id": "boro", "name_en": "Boro rice", "name_bn": "বোরো ধান",
+      "stages": [
+        {"key": "seedbed", "start_month": 11, "end_month": 12, "flood": 0.8, "drought": 0.8, "salt": 0.9},
+        {"key": "transplanting", "start_month": 12, "end_month": 1, "flood": 0.6, "drought": 1.0, "salt": 1.2},
+        {"key": "vegetative", "start_month": 1, "end_month": 2, "flood": 0.6, "drought": 1.1, "salt": 1.2},
+        {"key": "flowering", "start_month": 3, "end_month": 3, "flood": 0.8, "drought": 1.2, "salt": 1.3},
+        {"key": "grain_filling_harvest", "start_month": 4, "end_month": 5, "flood": 1.3, "drought": 0.6, "salt": 1.0}
+      ]
+    },
+    {
+      "id": "aus", "name_en": "Aus rice", "name_bn": "আউশ ধান",
+      "stages": [
+        {"key": "sowing", "start_month": 3, "end_month": 4, "flood": 1.0, "drought": 1.1, "salt": 0.9},
+        {"key": "vegetative", "start_month": 5, "end_month": 6, "flood": 1.1, "drought": 1.0, "salt": 0.8},
+        {"key": "flowering", "start_month": 6, "end_month": 7, "flood": 1.1, "drought": 1.1, "salt": 0.7},
+        {"key": "grain_filling_harvest", "start_month": 7, "end_month": 8, "flood": 1.3, "drought": 0.5, "salt": 0.5}
+      ]
+    }
+  ]
+}

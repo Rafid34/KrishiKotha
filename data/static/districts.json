@@ -1,1 +1,10 @@
-[]
+[
+  {"id": "sylhet", "name_en": "Sylhet", "name_bn": "সিলেট", "division": "Sylhet", "lat": 24.8949, "lon": 91.8687, "coastal_distance_km": 250, "upstream_bbox": null},
+  {"id": "sunamganj", "name_en": "Sunamganj", "name_bn": "সুনামগঞ্জ", "division": "Sylhet", "lat": 25.0658, "lon": 91.4073, "coastal_distance_km": 280, "upstream_bbox": null},
+  {"id": "khulna", "name_en": "Khulna", "name_bn": "খুলনা", "division": "Khulna", "lat": 22.8456, "lon": 89.5403, "coastal_distance_km": 60, "upstream_bbox": null},
+  {"id": "satkhira", "name_en": "Satkhira", "name_bn": "সাতক্ষীরা", "division": "Khulna", "lat": 22.7185, "lon": 89.0705, "coastal_distance_km": 30, "upstream_bbox": null},
+  {"id": "barishal", "name_en": "Barishal", "name_bn": "বরিশাল", "division": "Barishal", "lat": 22.7010, "lon": 90.3535, "coastal_distance_km": 70, "upstream_bbox": null},
+  {"id": "rajshahi", "name_en": "Rajshahi", "name_bn": "রাজশাহী", "division": "Rajshahi", "lat": 24.3745, "lon": 88.6042, "coastal_distance_km": 350, "upstream_bbox": null},
+  {"id": "rangpur", "name_en": "Rangpur", "name_bn": "রংপুর", "division": "Rangpur", "lat": 25.7439, "lon": 89.2752, "coastal_distance_km": 330, "upstream_bbox": null},
+  {"id": "chattogram", "name_en": "Chattogram", "name_bn": "চট্টগ্রাম", "division": "Chattogram", "lat": 22.3569, "lon": 91.7832, "coastal_distance_km": 10, "upstream_bbox": null}
+]

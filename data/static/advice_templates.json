@@ -1,1 +1,52 @@
-[]
+{
+  "drought_high_transplant": {
+    "condition": "drought high, crop Aman, stage nursery or transplanting",
+    "text_bn": "আপনার জমির মাটি খুব শুকনো। আমন ধান রোপণের আগে ৫ দিন অপেক্ষা করুন।",
+    "text_en": "Your soil is very dry. Wait 5 days before transplanting Aman rice."
+  },
+  "drought_moderate_any": {
+    "condition": "drought moderate, any stage",
+    "text_bn": "মাটির আর্দ্রতা কমছে। সম্ভব হলে ভোরে বা সন্ধ্যায় হালকা সেচ দিন।",
+    "text_en": "Soil moisture is falling. If possible, give light irrigation at dawn or dusk."
+  },
+  "flood_high_harvest": {
+    "condition": "flood high, stage grain filling or harvest",
+    "text_bn": "গত কয়েক দিনে অনেক বৃষ্টি হয়েছে, বন্যার ঝুঁকি বাড়ছে। সম্ভব হলে আগেই ধান কেটে ফেলুন।",
+    "text_en": "Heavy rain has fallen in recent days and flood risk is rising. If possible, harvest the rice early."
+  },
+  "flood_high_early": {
+    "condition": "flood high, other stages",
+    "text_bn": "বন্যার ঝুঁকি বেশি। জমির পানি বের করার নালা পরিষ্কার রাখুন এবং বীজতলা উঁচু স্থানে রাখুন।",
+    "text_en": "Flood risk is high. Keep drainage channels clear and keep seedbeds on high ground."
+  },
+  "flood_moderate_any": {
+    "condition": "flood moderate, any stage",
+    "text_bn": "এই এলাকায় বৃষ্টি বাড়ছে। জমির পানি বের করার নালা পরিষ্কার রাখুন।",
+    "text_en": "Rain is increasing in your area. Keep field drainage channels clear."
+  },
+  "salt_high_any": {
+    "condition": "salt high or moderate, any stage",
+    "text_bn": "আপনার এলাকায় লবণাক্ততার ঝুঁকি বেশি। সেচের আগে পানি পরীক্ষা করুন এবং সম্ভব হলে মিঠা পানি ব্যবহার করুন।",
+    "text_en": "Salinity risk is high in your area. Test water before irrigation and use fresh water if possible."
+  },
+  "none_low": {
+    "condition": "no hazard at or above 40",
+    "text_bn": "এখন বড় কোনো ঝুঁকি নেই। স্বাভাবিকভাবে চাষ চালিয়ে যান।",
+    "text_en": "No major risk right now. Continue farming as normal."
+  },
+  "welcome": {
+    "condition": "registration confirmed",
+    "text_bn": "কৃষি কথায় স্বাগতম। আপনার এলাকা ও ফসল নথিভুক্ত হয়েছে। আমরা সতর্কবার্তা পাঠাব।",
+    "text_en": "Welcome to Krishi Kotha. Your area and crop are registered. We will send you alerts."
+  },
+  "help": {
+    "condition": "parse failure",
+    "text_bn": "বুঝতে পারিনি। এভাবে লিখুন: SYLHET AMAN",
+    "text_en": "We did not understand. Write like this: SYLHET AMAN"
+  },
+  "stopped": {
+    "condition": "STOP command",
+    "text_bn": "আপনার সাবস্ক্রিপশন বন্ধ হয়েছে।",
+    "text_en": "Your subscription has been stopped."
+  }
+}
