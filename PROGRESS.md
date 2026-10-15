@@ -12,6 +12,7 @@
 | 7: Frontend scaffold and risk map dashboard | Done | Verified: 22 vitest tests pass; `npm run build` succeeds; map renders 8 district markers with OpenStreetMap tiles; date 2022-06-16 with flood hazard shows Sylhet High (score 98.01, red marker); RiskBadge and Legend follow Section 8.4 (icon shape + colour + text label); fonts self-hosted (@fontsource Inter & Noto Sans Bengali); 360 px mobile width verified with zero horizontal overflow. |
 | 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
 | 9: Farmer simulator UI | Done | Verified: 147 backend tests pass (18 in `test_api.py`); 32 vitest tests pass (7 in `simulator.test.jsx`); `npm run build` succeeds; `PhoneMockup` renders centered feature phone mockup (~320 px wide) with monochrome LCD screen, keypad, input box, Send button, Call button; Bangla text guaranteed >= 18 px in Noto Sans Bengali (`lang="bn"`); Quick-fill buttons for `SYLHET AMAN`, `KHULNA BORO`, `RAJSHAHI AMAN`, `HELP`, `STOP`; typing `SYLHET AMAN` on demo date 2022-06-16 returns welcome and flood advice messages; side panel renders Rule ID (`flood_high_early`), triggering hazard (`Flood` / High), and underlying scores (Drought 0.9, Flood 98.0, Salinity 0.0); `AdviceCard` renders Bangla (>=18px) and English text with audio button; invalid input returns help message; zero horizontal overflow at 360 px width. |
+| 10: SMAP, MODIS NDVI, GIBS overlays | Done | Verified: 167 backend tests pass; 45 vitest tests pass; `npm run build` succeeds; real SPL4SMGP v008 file inspected first (`Geophysical_Data/sm_rootzone_pctl`, EASE-Grid 2.0); live run 2026-10-10 to 2026-10-13 shows `soil_source: SMAP_L4` for 5 districts and the POWER fallback (shown in UI) for 3 water-cell districts; MOD13Q1.061 NDVI anomaly used for 32 of 32 district-days with product version in the panel; GIBS ids confirmed from GetCapabilities; overlay toggle with attribution and no-imagery fallback; `/api/sources` lists SMAP and MODIS. See Phase 10 details. |
 
 ## Spec patch (2026-10-15)
 
@@ -403,4 +404,15 @@ Implemented Phase 9: Farmer simulator UI (Sections 7.2, 8.2, 8.4, 9).
 - Mobile responsiveness:
   - Verified at 360 px width with zero horizontal overflow (`phone-wrapper` max-width 320 px).
 
+## Phase 10 details
 
+Last completed task: 10.6 and docs. Next task: Phase 11 (not started).
+
+- `services/nasa/smap.py`: group/variable confirmed from the real file before coding; nearest-cell lookup from 1-D lat/lon vectors; raw granule deleted; per-day JSON cache. CLI `python -m backend.app.services.nasa.smap --date 2022-06-16`.
+- `services/nasa/modis.py`: AppEEARS login, point task, poll, bundle CSV, NDVI baseline functions. Three real-API differences found and fixed (303 on done, no `status` key while processing, NDVI already scaled); see `docs/data_sources.md`.
+- `pipeline/run_pipeline.py`: soil input is SMAP when present, else POWER (not degraded); `inputs.soil_source`, `inputs.ndvi_anom`, `sources.soil/ndvi`; Observation rows `SMAP_L4/rz_pctl` and `MODIS_MOD13Q1/ndvi`; `PipelineRun.detail.sources.SMAP/MODIS` with fallback reason. SMAP and MODIS never change the run status (Section 7.7).
+- `pipeline/build_ndvi_baseline.py` wrote `ndvi_mean` (2003-2020) for all 8 districts; `build_baseline` now preserves it.
+- `/api/risk/{id}/explain` adds `soil_source` and `ndvi` (with `fallback`/`used`); `/api/sources` adds SPL4SMGP 008 and MOD13Q1 061.
+- Frontend: `config/layers.js` (confirmed ids, real tile matrix sets), `OverlayControl.jsx`, overlay in `RiskMap.jsx`, `SourceNotes.jsx` in `FactorBars.jsx`; fixed the `vegetation_anomaly` label key.
+- Decisions in `docs/methodology.md` (Phase 10): salinity without NDVI is `degraded: false` (resolves the earlier F2.2 vs 7.6 note); no `/api/layers` route; extra 16-day NDVI GIBS layer because the 8-day layer starts 2025.
+- Not done: snapshot JSON files not re-exported (Phase 12); Phase 10 live rows exist only in the local database.
