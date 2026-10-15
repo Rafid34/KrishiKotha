@@ -11,6 +11,7 @@ from backend.app.seed import seed
 from backend.app.services.nasa.power import fetch_power
 from backend.app.services.risk.baseline import (
     compute_baseline,
+    merge_ndvi_mean,
     store_baseline_rows,
     write_baseline_file,
 )
@@ -28,7 +29,7 @@ def main() -> int:
         for district in session.query(District).order_by(District.id).all():
             try:
                 frame = fetch_power(district.lat, district.lon, start, end)
-                rows = compute_baseline(frame)
+                rows = merge_ndvi_mean(district.id, compute_baseline(frame))
                 path = write_baseline_file(
                     district.id, rows, settings.baseline_start_year, settings.baseline_end_year
                 )

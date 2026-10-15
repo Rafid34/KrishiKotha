@@ -2,6 +2,7 @@ import React from 'react';
 import { useLang, t } from '../i18n/index.jsx';
 import { formatNumber } from '../utils/format.js';
 import { hazardLabel } from '../utils/risk.js';
+import SourceNotes from './SourceNotes.jsx';
 
 const FACTOR_NAMES = {
   rain3_pctl: { en: '3-Day Rainfall Percentile', bn: '৩ দিনের বৃষ্টি পারসেন্টাইল' },
@@ -10,7 +11,8 @@ const FACTOR_NAMES = {
   seasonal_intrusion: { en: 'Seasonal Salinity Index', bn: 'মৌসুমী লবণাক্ততা সূচক' },
   rain_deficit: { en: '30-Day Rainfall Deficit', bn: '৩০ দিনের বৃষ্টির ঘাটতি' },
   heat_anomaly: { en: '7-Day Temperature Anomaly', bn: '৭ দিনের তাপমাত্রার অসঙ্গতি' },
-  ndvi_anomaly: { en: 'Vegetation Health Anomaly (NDVI)', bn: 'উদ্ভিদ স্বাস্থ্য অসঙ্গতি (NDVI)' },
+  // Matches the input name emitted by `score_salt` in the backend (`vegetation_anomaly`).
+  vegetation_anomaly: { en: 'Vegetation Health Anomaly (NDVI)', bn: 'উদ্ভিদ স্বাস্থ্য অসঙ্গতি (NDVI)' },
 };
 
 /**
@@ -37,6 +39,7 @@ export default function FactorBars({ explain, hazard }) {
   const coastal = hazardBlock?.coastal_factor ?? null;
   const isDegraded = explain.degraded;
 
+
   return (
     <section className="factor-bars" aria-label={t('districtPanel.whyScore', lang)}>
       <div className="factor-bars__header">
@@ -49,6 +52,14 @@ export default function FactorBars({ explain, hazard }) {
           </span>
         )}
       </div>
+
+      {/* Source notes: show which soil input was used and any NDVI fallback (F2.1, F2.2) */}
+      <SourceNotes
+        hazard={hazard}
+        soilSource={explain.soil_source ?? null}
+        ndvi={explain.ndvi ?? null}
+        lang={lang}
+      />
 
       <div className="factor-bars__list">
         {inputs.map((item, idx) => {
@@ -229,6 +240,19 @@ style.textContent = `
   font-size: 10px;
   color: var(--ink-muted);
   letter-spacing: 0.02em;
+}
+
+.factor-note {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin: 0;
+}
+.factor-note--fallback {
+  background: #FFF3CD;
+  color: #856404;
+  border: 1px solid #FFEBAA;
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
 }
 
 .factor-coastal {

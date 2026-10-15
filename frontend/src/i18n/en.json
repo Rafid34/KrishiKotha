@@ -28,6 +28,14 @@
     "datePicker": "Date",
     "dataFreshness": "Data freshness"
   },
+  "overlay": {
+    "title": "NASA imagery overlay",
+    "none": "None",
+    "credit": "Imagery: NASA GIBS",
+    "beforeCoverage": "No NASA imagery for this date (this layer starts {start}). Showing the base map only.",
+    "future": "No NASA imagery for a future date. Showing the base map only.",
+    "tileError": "Some NASA imagery tiles could not be loaded. The risk markers are unaffected."
+  },
   "districtPanel": {
     "scores": "Risk Scores",
     "whyScore": "Why this score",
@@ -41,6 +49,11 @@
     "distance": "Distance",
     "multiplier": "Multiplier",
     "fallbackUsed": "Fallback formula used (degraded mode)",
+    "soilSource": "Soil moisture source",
+    "soilSourceSmap": "NASA SMAP L4 root zone percentile",
+    "soilSourcePower": "NASA POWER GWETROOT (SMAP unavailable for this date, fallback in use)",
+    "ndviUsed": "Vegetation anomaly (NDVI)",
+    "ndviFallback": "NDVI anomaly unavailable: salinity uses the Level 1 formula without NDVI",
     "advice": "Advice for farmers",
     "selectCrop": "Select crop",
     "rainfallTrend": "60-day rainfall trend & soil wetness",

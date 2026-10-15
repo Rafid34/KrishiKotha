@@ -43,6 +43,24 @@ DATASETS: tuple[dict[str, str], ...] = (
         "url": "https://doi.org/10.5067/GPM/IMERGDF/DAY/07",
         "observation_source": "IMERG_FINAL",
     },
+    {
+        "name": "SMAP L4 Global 3-hourly 9 km Surface and Root Zone Soil Moisture (root zone percentile)",
+        "short_name": "SPL4SMGP",
+        "version": "008",
+        "resolution": "9 km EASE-Grid 2.0, 3-hourly (one granule per day near 06:00 UTC used)",
+        "latency": "about 2 to 3 days (newest CMR granule 2026-10-11 on 2026-10-15)",
+        "url": "https://doi.org/10.5067/T5RUATAQREF8",
+        "observation_source": "SMAP_L4",
+    },
+    {
+        "name": "MODIS Terra Vegetation Indices 16-day 250 m (NDVI) via AppEEARS",
+        "short_name": "MOD13Q1",
+        "version": "061",
+        "resolution": "250 m, 16-day composite (point extraction at district centroids)",
+        "latency": "asynchronous AppEEARS task; often still pending after a minute, so NDVI may fall back",
+        "url": "https://appeears.earthdatacloud.nasa.gov/",
+        "observation_source": "MODIS_MOD13Q1",
+    },
 )
 
 

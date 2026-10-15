@@ -205,6 +205,50 @@ def test_sources_shape_and_last_dates(client: TestClient, loaded: sessionmaker[S
     assert by_name["GPM_3IMERGDF"]["last_data_date"] == "2022-06-16"
     assert by_name["GPM_3IMERGDL"]["last_data_date"] is None
     assert by_name["POWER_DAILY"]["last_data_date"] == "2022-06-16"
+    # Phase 10: SMAP and MODIS are listed even when no value has been stored yet (null date).
+    assert by_name["SPL4SMGP"]["version"] == "008" and by_name["SPL4SMGP"]["last_data_date"] is None
+    assert by_name["MOD13Q1"]["version"] == "061" and by_name["MOD13Q1"]["last_data_date"] is None
+
+
+def test_sources_report_smap_and_modis_last_dates(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    with loaded() as db:
+        db.add(Observation(district_id="sylhet", date=date(2022, 6, 15), source="SMAP_L4", variable="rz_pctl", value=97.0, product_version="008"))
+        db.add(Observation(district_id="sylhet", date=date(2022, 6, 16), source="SMAP_L4", variable="rz_pctl", value=None, product_version="008"))
+        db.add(Observation(district_id="sylhet", date=date(2022, 6, 10), source="MODIS_MOD13Q1", variable="ndvi", value=0.61, product_version="061"))
+        db.commit()
+    by_name = {s["short_name"]: s for s in client.get("/api/sources").json()}
+    assert by_name["SPL4SMGP"]["last_data_date"] == "2022-06-15"  # null values do not count
+    assert by_name["MOD13Q1"]["last_data_date"] == "2022-06-10"
+
+
+def test_explain_reports_soil_source_and_ndvi_fallback(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    # Rows stored before Phase 10 carry neither field.
+    old = client.get("/api/risk/sylhet/explain", params={"date": "2022-06-16"}).json()
+    assert old["soil_source"] is None and old["ndvi"] is None
+
+    with loaded() as db:
+        row = db.query(RiskSnapshot).filter_by(district_id="sylhet", date=date(2022, 6, 16)).one()
+        row.inputs = {**row.inputs, "soil_source": "POWER_GWETROOT", "ndvi_anom": None}
+        row.sources = {"soil": {"name": "NASA POWER GWETROOT", "version": "V2", "data_date": "2022-06-16"}}
+        rajshahi = db.query(RiskSnapshot).filter_by(district_id="rajshahi", date=date(2022, 6, 16)).one()
+        rajshahi.inputs = {**rajshahi.inputs, "soil_source": "SMAP_L4", "ndvi_anom": -0.08}
+        rajshahi.sources = {
+            "soil": {"name": "SMAP L4", "version": "008", "data_date": "2022-06-16"},
+            "ndvi": {"name": "AppEEARS MOD13Q1.061 NDVI anomaly", "version": "061", "data_date": "2022-06-16"},
+        }
+        db.commit()
+
+    fallback = client.get("/api/risk/sylhet/explain", params={"date": "2022-06-16"}).json()
+    assert fallback["soil_source"]["source"] == "POWER_GWETROOT" and fallback["soil_source"]["fallback"] is True
+    assert fallback["ndvi"]["used"] is False and "Level 1" in fallback["ndvi"]["fallback_reason"]
+
+    smap = client.get("/api/risk/rajshahi/explain", params={"date": "2022-06-16"}).json()
+    assert smap["soil_source"]["source"] == "SMAP_L4" and smap["soil_source"]["fallback"] is False
+    assert smap["soil_source"]["version"] == "008"
+    assert smap["ndvi"] == {
+        "used": True, "anomaly": -0.08, "product": "AppEEARS MOD13Q1.061 NDVI anomaly",
+        "version": "061", "data_date": "2022-06-16", "fallback_reason": None,
+    }
 
 
 def test_pipeline_status(client: TestClient, loaded: sessionmaker[Session]) -> None:

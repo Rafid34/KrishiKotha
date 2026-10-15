@@ -18,9 +18,11 @@ from ..schemas import (
     Hazard,
     HazardExplain,
     HazardScore,
+    NdviInfo,
     RiskMapOut,
     RiskSeriesOut,
     SeriesPoint,
+    SoilSourceInfo,
 )
 
 router = APIRouter(prefix="/api/risk", tags=["risk"])
@@ -170,6 +172,40 @@ def _explain_block(row: RiskSnapshot, hazard: str) -> HazardExplain:
     )
 
 
+def _soil_source_info(row: RiskSnapshot) -> SoilSourceInfo | None:
+    source = (row.inputs or {}).get("soil_source")
+    if source is None:
+        return None  # snapshot stored before SMAP support: only POWER existed
+    soil = (row.sources or {}).get("soil", {})
+    return SoilSourceInfo(
+        source=source,
+        name=soil.get("name"),
+        version=soil.get("version"),
+        data_date=soil.get("data_date"),
+        fallback=source != "SMAP_L4",
+    )
+
+
+def _ndvi_info(row: RiskSnapshot) -> NdviInfo | None:
+    inputs = row.inputs or {}
+    if "ndvi_anom" not in inputs:
+        return None  # snapshot stored before NDVI support
+    anomaly = inputs.get("ndvi_anom")
+    if anomaly is not None:
+        ndvi = (row.sources or {}).get("ndvi", {})
+        return NdviInfo(
+            used=True, anomaly=anomaly, product=ndvi.get("name"),
+            version=ndvi.get("version"), data_date=ndvi.get("data_date"),
+        )
+    return NdviInfo(
+        used=False,
+        fallback_reason=(
+            "NDVI anomaly unavailable (AppEEARS task pending or no baseline); "
+            "salinity uses the Level 1 formula without NDVI"
+        ),
+    )
+
+
 @router.get("/{district_id}/explain", response_model=ExplainOut)
 def risk_explain(
     district_id: str,
@@ -194,4 +230,6 @@ def risk_explain(
         drought=_explain_block(row, "drought"),
         salt=_explain_block(row, "salt"),
         degraded=bool(row.degraded),
+        soil_source=_soil_source_info(row),
+        ndvi=_ndvi_info(row),
     )

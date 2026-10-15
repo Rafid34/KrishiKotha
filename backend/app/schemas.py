@@ -92,6 +92,27 @@ class HazardExplain(BaseModel):
     coastal_factor: CoastalFactor | None = None  # salt only
 
 
+class SoilSourceInfo(BaseModel):
+    """Which soil input fed the score; `fallback` is true when POWER replaced SMAP (F2.1)."""
+
+    source: str | None  # `SMAP_L4`, `POWER_GWETROOT`, or null for rows stored before Phase 10
+    name: str | None = None
+    version: str | None = None
+    data_date: str | None = None
+    fallback: bool = False
+
+
+class NdviInfo(BaseModel):
+    """NDVI anomaly status; `used` false means the Level 1 salinity formula was applied (F2.2)."""
+
+    used: bool
+    anomaly: float | None = None
+    product: str | None = None
+    version: str | None = None
+    data_date: str | None = None
+    fallback_reason: str | None = None
+
+
 class ExplainOut(BaseModel):
     district_id: str
     date: str
@@ -99,6 +120,8 @@ class ExplainOut(BaseModel):
     drought: HazardExplain
     salt: HazardExplain
     degraded: bool
+    soil_source: SoilSourceInfo | None = None
+    ndvi: NdviInfo | None = None
 
 
 class SourceOut(BaseModel):

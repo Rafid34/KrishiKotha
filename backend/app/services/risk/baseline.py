@@ -87,7 +87,7 @@ def load_baseline(district_id: str, base_dir: Path = BASELINE_DIR) -> dict[int, 
 
 
 def store_baseline_rows(session: Session, district_id: str, rows: dict[int, dict[str, Any]]) -> None:
-    """Upsert baseline rows into the `baselines` table."""
+    """Upsert baseline rows into the `baselines` table (an existing `ndvi_mean` is kept unless given)."""
     for doy, row in rows.items():
         obj = session.get(Baseline, (district_id, doy)) or Baseline(district_id=district_id, doy=doy)
         obj.rain3_sorted = row["rain3_sorted"]
@@ -95,5 +95,36 @@ def store_baseline_rows(session: Session, district_id: str, rows: dict[int, dict
         obj.rain30_mean = row["rain30_mean"]
         obj.tmax_mean = row["tmax_mean"]
         obj.soil_sorted = row["soil_sorted"]
+        if row.get("ndvi_mean") is not None:
+            obj.ndvi_mean = row["ndvi_mean"]
         session.add(obj)
     session.commit()
+
+
+def merge_ndvi_mean(
+    district_id: str, rows: dict[int, dict[str, Any]], base_dir: Path = BASELINE_DIR
+) -> dict[int, dict[str, Any]]:
+    """Carry an already-built `ndvi_mean` over into freshly computed POWER baseline rows.
+
+    Rebuilding the POWER baseline must not silently discard the MODIS NDVI climatology.
+    """
+    path = baseline_path(district_id, base_dir)
+    if not path.exists():
+        return rows
+    old = load_baseline(district_id, base_dir)
+    for doy, row in rows.items():
+        if old.get(doy, {}).get("ndvi_mean") is not None:
+            row["ndvi_mean"] = old[doy]["ndvi_mean"]
+    return rows
+
+
+def write_ndvi_mean(
+    district_id: str, daily_mean: dict[int, float | None], base_dir: Path = BASELINE_DIR
+) -> Path:
+    """Add `ndvi_mean` to every day-of-year row of an existing baseline file (other keys untouched)."""
+    path = baseline_path(district_id, base_dir)
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    for key, row in doc["doy"].items():
+        row["ndvi_mean"] = daily_mean.get(int(key))
+    path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+    return path

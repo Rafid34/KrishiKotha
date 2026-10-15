@@ -121,6 +121,7 @@ export default function Dashboard() {
             hazard={hazard}
             selectedId={selectedId}
             onSelectDistrict={handleSelectDistrict}
+            date={date}
           />
         </section>
 

@@ -5,6 +5,8 @@ import L from 'leaflet';
 import Legend from './Legend.jsx';
 import { levelColor, hazardLabel } from '../utils/risk.js';
 import { useLang } from '../i18n/index.jsx';
+import OverlayControl from './OverlayControl.jsx';
+import { GIBS_LAYERS, GIBS_ATTRIBUTION, gibsTileUrl, layerAvailability } from '../config/layers.js';
 
 // Bangladesh approximate centre
 const BANGLADESH_CENTER = [23.685, 90.356];
@@ -40,6 +42,7 @@ function LegendControl() {
   return container ? createPortal(<Legend />, container) : null;
 }
 
+
 /**
  * RiskMap â€” Leaflet map with 8 district markers coloured by the active hazard level.
  *
@@ -49,6 +52,7 @@ function LegendControl() {
  *   hazard: 'drought'|'flood'|'salt',
  *   selectedId: string|null,
  *   onSelectDistrict: (id: string) => void,
+ *   date: string|null,   // YYYY-MM-DD used for the GIBS overlay time
  * }} props
  */
 export default function RiskMap({
@@ -57,8 +61,16 @@ export default function RiskMap({
   hazard = 'flood',
   selectedId = null,
   onSelectDistrict,
+  date = null,
 }) {
   const { lang } = useLang();
+  const [overlayKey, setOverlayKey] = useState('none');
+  const [tileError, setTileError] = useState(false);
+  const overlayLayer = GIBS_LAYERS.find(l => l.key === overlayKey) ?? null;
+  const overlayStatus = overlayLayer ? layerAvailability(overlayLayer, date) : null;
+  const showOverlay = overlayLayer && overlayStatus === 'ok';
+
+  useEffect(() => { setTileError(false); }, [overlayKey, date]);
 
   // Build a lookup: district_id â†’ risk entry
   const riskByDistrict = useMemo(() => {
@@ -83,6 +95,19 @@ export default function RiskMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={18}
         />
+
+        {/* NASA GIBS overlay: added when selected and available, removed otherwise */}
+        {showOverlay && (
+          <TileLayer
+            key={`${overlayLayer.id}-${date}`}
+            url={gibsTileUrl(overlayLayer, date)}
+            attribution={GIBS_ATTRIBUTION}
+            opacity={overlayLayer.opacity}
+            maxNativeZoom={overlayLayer.maxNativeZoom}
+            maxZoom={18}
+            eventHandlers={{ tileerror: () => setTileError(true) }}
+          />
+        )}
 
         {/* District markers */}
         {districts.map(district => {
@@ -140,6 +165,14 @@ export default function RiskMap({
         {/* Legend inside the map */}
         <LegendControl />
       </MapContainer>
+      <OverlayControl
+        value={overlayKey}
+        onChange={setOverlayKey}
+        status={overlayStatus}
+        tileError={tileError}
+        layer={overlayLayer}
+        lang={lang}
+      />
     </div>
   );
 }
@@ -148,6 +181,7 @@ export default function RiskMap({
 const style = document.createElement('style');
 style.textContent = `
 .risk-map {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 340px;
@@ -155,6 +189,33 @@ style.textContent = `
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }
+
+.overlay-control {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  max-width: min(240px, calc(100% - 70px));
+  margin: 0;
+  padding: 6px 10px 8px;
+  background: rgba(255,255,255,.95);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  color: var(--ink);
+}
+.overlay-control__title { font-weight: 700; padding: 0 4px; }
+.overlay-control__option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  cursor: pointer;
+}
+.overlay-control__option input:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.overlay-control__credit { margin: 4px 0 0; color: var(--nasa-blue); font-weight: 600; }
+.overlay-control__fallback { margin: 4px 0 0; color: #856404; background: #FFF3CD; border-radius: var(--radius-sm); padding: 4px 6px; }
 
 .map-tooltip {
   font-size: 13px;

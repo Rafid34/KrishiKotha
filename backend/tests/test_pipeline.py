@@ -13,9 +13,25 @@ from backend.app.models import Observation, PipelineRun, RiskSnapshot
 from backend.app.services.nasa.offline import OfflineModeError
 from backend.app.services.nasa.power import fetch_power
 from backend.app.services.snapshots import build_snapshot_doc, load_snapshot_doc
-from pipeline.run_pipeline import MAX_SOIL_AGE_DAYS, power_indicators, rain_sums, run_pipeline
+import pipeline.run_pipeline as pipeline_module
+from pipeline.run_pipeline import MAX_SOIL_AGE_DAYS, power_indicators, rain_sums
 
 START, END = date(2022, 6, 14), date(2022, 6, 16)
+
+
+def _no_smap(day: date, districts: list[dict]) -> dict[str, float | None]:
+    return {d["id"]: None for d in districts}
+
+
+def _no_ndvi(districts: list[dict], end: date) -> tuple[dict[str, float | None], str, dict[str, str | None]]:
+    return {d["id"]: None for d in districts}, "MOD13Q1.061", {d["id"]: None for d in districts}
+
+
+def run_pipeline(*args, **kwargs):
+    """Real runner with SMAP and NDVI faked as unavailable unless a test overrides them (no network)."""
+    kwargs.setdefault("soil_fetcher", _no_smap)
+    kwargs.setdefault("ndvi_fetcher", _no_ndvi)
+    return pipeline_module.run_pipeline(*args, **kwargs)
 
 
 def _power_frame(first: date, last: date, soil: float = 0.9, tmax: float = 33.0) -> pd.DataFrame:
@@ -108,7 +124,13 @@ def test_run_pipeline_writes_scores_observations_and_run(session_factory: sessio
         assert sylhet.sources["rain"]["short_name"] == "GPM_3IMERGDF"
 
         sources = {(o.source, o.variable) for o in db.scalars(select(Observation))}
-        assert sources == {("IMERG_FINAL", "precip_mm"), ("POWER", "tmax_c"), ("POWER", "soil_wetness")}
+        assert sources == {
+            ("IMERG_FINAL", "precip_mm"), ("POWER", "tmax_c"), ("POWER", "soil_wetness"),
+            ("SMAP_L4", "rz_pctl"),  # stored as null when SMAP is unavailable
+        }
+        assert sylhet.inputs["soil_source"] == "POWER_GWETROOT"
+        assert record.detail["sources"]["SMAP"]["status"] == "unavailable_fallback_to_power"
+        assert record.detail["sources"]["MODIS"]["status"] == "unavailable_fallback_no_ndvi"
 
         run_pipeline(db, START, END, "final", rain_fetcher=_rain(120.0), power_fetcher=_power)
         assert db.scalar(select(func.count()).select_from(RiskSnapshot)) == 24  # upsert, no duplicates
@@ -182,6 +204,107 @@ def test_snapshot_export_and_reload_round_trip(session_factory: sessionmaker[Ses
         assert (loaded.flood_score, loaded.inputs) == expected
         assert load_snapshot_doc(fresh, doc)["pipeline_runs"] == 0  # idempotent
         assert fresh.scalar(select(func.count()).select_from(RiskSnapshot)) == 3
+
+
+def _sylhet_row(db: Session) -> RiskSnapshot:
+    return db.scalars(
+        select(RiskSnapshot).where(RiskSnapshot.district_id == "sylhet", RiskSnapshot.date == END)
+    ).one()
+
+
+def test_smap_preferred_over_power_and_source_recorded(session_factory: sessionmaker[Session]) -> None:
+    def smap_fetch(day: date, districts: list[dict]) -> dict[str, float | None]:
+        return {d["id"]: 97.0 for d in districts}
+
+    with session_factory() as db:
+        record = run_pipeline(
+            db, END, END, "final", rain_fetcher=_rain(5.0), power_fetcher=_power, soil_fetcher=smap_fetch
+        )
+        assert record.status == "ok"
+        row = _sylhet_row(db)
+        assert row.inputs["soil_source"] == "SMAP_L4" and row.degraded is False
+        soil = next(i for i in row.inputs["flood"]["inputs"] if i["name"] == "soil_pctl")
+        assert soil["value"] == 97.0 and soil["source"].startswith("SMAP L4")
+        assert soil["data_date"] == END.isoformat()
+        assert row.sources["soil"]["version"] == "008"
+        obs = db.scalars(select(Observation).where(Observation.source == "SMAP_L4")).all()
+        assert obs and all(o.value == 97.0 and o.variable == "rz_pctl" for o in obs)
+        assert record.detail["sources"]["SMAP"]["status"] == "ok"
+
+
+def test_smap_failure_falls_back_to_power_without_degrading(session_factory: sessionmaker[Session]) -> None:
+    def broken(day: date, districts: list[dict]) -> dict[str, float | None]:
+        raise RuntimeError("no granule")
+
+    with session_factory() as db:
+        record = run_pipeline(
+            db, END, END, "late", rain_fetcher=_rain(5.0), power_fetcher=_power, soil_fetcher=broken
+        )
+        assert record.status == "ok"  # SMAP never affects the overall status (Section 7.7)
+        row = _sylhet_row(db)
+        assert row.inputs["soil_source"] == "POWER_GWETROOT" and row.degraded is False
+        soil = next(i for i in row.inputs["drought"]["inputs"] if i["name"] == "soil_pctl")
+        assert soil["source"] == "NASA POWER GWETROOT"
+        smap_detail = record.detail["sources"]["SMAP"]
+        assert smap_detail["status"] == "unavailable_fallback_to_power"
+        assert smap_detail["failed_days"] == {END.isoformat(): "RuntimeError: no granule"}
+
+
+def test_smap_partial_district_uses_power_for_the_rest(session_factory: sessionmaker[Session]) -> None:
+    def partial(day: date, districts: list[dict]) -> dict[str, float | None]:
+        return {d["id"]: (50.0 if d["id"] == "sylhet" else None) for d in districts}
+
+    with session_factory() as db:
+        run_pipeline(db, END, END, "late", rain_fetcher=_rain(5.0), power_fetcher=_power, soil_fetcher=partial)
+        rows = {r.district_id: r for r in db.scalars(select(RiskSnapshot))}
+        assert rows["sylhet"].inputs["soil_source"] == "SMAP_L4"
+        assert rows["khulna"].inputs["soil_source"] == "POWER_GWETROOT"
+
+
+def test_ndvi_anomaly_used_when_current_and_baseline_exist(
+    session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_load = pipeline_module.load_baseline
+
+    def with_ndvi(district_id: str):
+        rows = real_load(district_id)
+        return {doy: {**row, "ndvi_mean": 0.70} for doy, row in rows.items()}
+
+    monkeypatch.setattr(pipeline_module, "load_baseline", with_ndvi)
+
+    def ndvi(districts: list[dict], end: date):
+        return {d["id"]: 0.55 for d in districts}, "MOD13Q1.061", {d["id"]: "2022-03-22" for d in districts}
+
+    with session_factory() as db:
+        record = run_pipeline(
+            db, date(2022, 4, 10), date(2022, 4, 10), "late",
+            rain_fetcher=_rain(0.0), power_fetcher=_power, ndvi_fetcher=ndvi,
+        )
+        row = db.scalars(
+            select(RiskSnapshot).where(RiskSnapshot.district_id == "satkhira")
+        ).one()
+        assert row.inputs["ndvi_anom"] == pytest.approx(-0.15)
+        veg = next(i for i in row.inputs["salt"]["inputs"] if i["name"] == "vegetation_anomaly")
+        assert veg["value"] == 100.0 and veg["source"] == "AppEEARS MOD13Q1.061"
+        assert row.sources["ndvi"]["version"] == "061" and row.degraded is False
+        assert row.sources["ndvi"]["data_date"] == "2022-03-22"  # composite date, not the scored day
+        assert record.detail["sources"]["MODIS"]["status"] == "ok"
+        assert record.detail["sources"]["MODIS"]["composite_dates"]["satkhira"] == "2022-03-22"
+
+
+def test_ndvi_without_baseline_uses_level1_salinity_not_degraded(session_factory: sessionmaker[Session]) -> None:
+    def ndvi(districts: list[dict], end: date):
+        return {d["id"]: 0.55 for d in districts}, "MOD13Q1.061", {d["id"]: "2022-06-10" for d in districts}
+
+    with session_factory() as db:
+        record = run_pipeline(
+            db, END, END, "late", rain_fetcher=_rain(5.0), power_fetcher=_power, ndvi_fetcher=ndvi
+        )
+        row = _sylhet_row(db)
+        assert row.inputs["ndvi_anom"] is None and row.degraded is False
+        assert all(i["name"] != "vegetation_anomaly" for i in row.inputs["salt"]["inputs"])
+        assert record.detail["sources"]["MODIS"]["status"] == "ndvi_without_baseline_fallback"
+        assert db.scalars(select(Observation).where(Observation.source == "MODIS_MOD13Q1")).first() is not None
 
 
 def test_snapshot_mode_blocks_network_clients(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
