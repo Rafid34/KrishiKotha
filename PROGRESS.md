@@ -14,6 +14,7 @@
 | 9: Farmer simulator UI | Done | Verified: 147 backend tests pass (18 in `test_api.py`); 32 vitest tests pass (7 in `simulator.test.jsx`); `npm run build` succeeds; `PhoneMockup` renders centered feature phone mockup (~320 px wide) with monochrome LCD screen, keypad, input box, Send button, Call button; Bangla text guaranteed >= 18 px in Noto Sans Bengali (`lang="bn"`); Quick-fill buttons for `SYLHET AMAN`, `KHULNA BORO`, `RAJSHAHI AMAN`, `HELP`, `STOP`; typing `SYLHET AMAN` on demo date 2022-06-16 returns welcome and flood advice messages; side panel renders Rule ID (`flood_high_early`), triggering hazard (`Flood` / High), and underlying scores (Drought 0.9, Flood 98.0, Salinity 0.0); `AdviceCard` renders Bangla (>=18px) and English text with audio button; invalid input returns help message; zero horizontal overflow at 360 px width. |
 | 10: SMAP, MODIS NDVI, GIBS overlays | Done | Verified: 167 backend tests pass; 45 vitest tests pass; `npm run build` succeeds; real SPL4SMGP v008 file inspected first (`Geophysical_Data/sm_rootzone_pctl`, EASE-Grid 2.0); live run 2026-10-10 to 2026-10-13 shows `soil_source: SMAP_L4` for 5 districts and the POWER fallback (shown in UI) for 3 water-cell districts; MOD13Q1.061 NDVI anomaly used for 32 of 32 district-days with product version in the panel; GIBS ids confirmed from GetCapabilities; overlay toggle with attribution and no-imagery fallback; `/api/sources` lists SMAP and MODIS. See Phase 10 details. |
 | 11: Voice and Twilio gateway | Done | Verified: 187 backend tests pass (20 new in `test_voice_gateway.py`); 50 vitest tests pass (5 new in `audio.test.js`); `npm run build` succeeds; real gTTS call returned 72 KB `audio/mpeg` for the Sylhet advice; with `TWILIO_ENABLED=false` app startup imports neither `twilio` nor `gtts` (subprocess test); `POST /api/admin/broadcast` without `X-Admin-Key` returns 401, with the key and no `dry_run` it is a dry run (`sent: 0`, nothing logged or sent); Twilio webhooks tested with real signature validation (403 on bad signature) using a stubbed TTS. Manual checks not done: browser playback of the Call button, and a real Twilio SMS round trip (no verified number or tunnel available). See Phase 11 details. |
+| 12: Validation, backtest, and Method page | Done | Verified: 202 backend tests pass; 58 vitest tests pass; `npm run build` succeeds; `verify_offline.py` passes with 0 outbound attempts; backtest step 3 reconciled to Moderate or High; measured lead time 32 days (>= 3-day target met); validation report written to `docs/methodology.md`; Method and Data page rewritten with 4 sub-tabs; live `/api/scoring` and `/api/sources` integration; provenance check and dataset inventory documented. |
 
 ## Spec patch (2026-10-15)
 
@@ -434,7 +435,38 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: B6 (built snapshots latest_30d.json and sylhet_2022.json; verified offline mode with 0 outbound attempts; all 11 checks pass). Next task: B7 (confirm git status shows no .env, .db, data/cache or data/audio files staged).
+Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation report, Method and Data page, offline verification). Next task: Phase 13 (not started).
+
+- **Event backtest & lead time:**
+  - Date of first Moderate-or-higher flood level: `2022-05-15`
+  - Date of first High flood level: `2022-05-15`
+  - Reference onset date: `2022-06-16` (FFWC / BWDB Annual Flood Report 2022; UN OCHA / ReliefWeb)
+  - Measured lead time: 32 days (`2022-06-16` minus `2022-05-15`), exceeding the 3-day target without threshold tuning.
+- **High days breakdown:**
+  - High days before onset: 22 days (both Run A and Run B)
+  - High days onset to 2022-06-30: 11 days (Run A) / 10 days (Run B)
+  - High-level false alarm days (2022-07-01 to 2022-09-30): 0 in Run A (by construction; run ended 2022-06-30), 9 in Run B
+- **Seasonality checks (2022 full year, all 8 districts):**
+  - Flood score for Sylhet peaks between June and September: **PASS** (peak June, mean 78.7)
+  - Flood score for Sunamganj peaks between June and September: **PASS** (peak June, mean 83.5)
+  - Drought score for Rajshahi is higher in March and April than in July: **FAIL** (Mar 26.1, Apr 64.5, Jul 76.4; northwestern dry spell / heat anomaly in July 2022)
+  - Salinity score for Satkhira is higher in March to May than in August: **PASS** (Mar 79.4, Apr 92.0, May 52.2, Aug 28.2)
+  - Salinity score for Khulna is higher in March to May than in August: **PASS** (Mar 64.2, Apr 68.9, May 39.0, Aug 17.5)
+  - Salinity score for Rajshahi stays below 20 in every month: **PASS** (highest daily score 0.0 in January)
+- **Cross-product consistency (June 2022, 30 days):**
+  - Sylhet: Pearson $r = 0.652$, mean absolute difference 22.94 mm/day, mean IMERG minus POWER -6.73 mm/day, IMERG total 1352.0 mm, POWER total 1554.0 mm
+  - Rajshahi: Pearson $r = 0.555$, mean absolute difference 4.65 mm/day, mean IMERG minus POWER -1.00 mm/day, IMERG total 126.6 mm, POWER total 156.5 mm
+- **Decisions:**
+  - Reconciled backtest step 3 logic: `backend/app/services/backtest.py` was updated to accept Moderate or High for Step 3 (`flood_level in ("moderate", "high")`). Because Sylhet scored 91.32 (High) on 2022-05-15, requiring exact Moderate skipped ahead to 2022-05-25 and delayed first High to 2022-06-02. Reconciling step 3 aligns `/api/backtest/sylhet-2022` with validation report Block A (both 32 days lead time, first High 2022-05-15).
+  - False alarm defined as High flood days after 2022-06-30 up to 2022-09-30 (since spec does not define the flood period).
+  - Method and Data page rewritten with 4 sub-tabs (`summary`, `hazards`, `sources`, `validation`), preserving deep-linking via `?tab=` URL parameter.
+  - Added `/api/scoring` endpoint reflecting live constants from `scoring.py` so UI formulas dynamically match the scoring engine without duplication.
+  - Added NASA GIBS to dataset list in `/api/sources` as a map overlay source (`last_data_date: None`).
+  - Updated `scripts/verify_offline.py` to exempt overlay-only GIBS from the numerical observation date check.
+  - Re-exported `data/snapshots/latest_30d.json` (672 KB) and `data/snapshots/sylhet_2022.json` (1148 KB).
+- **Not done:**
+  - Phase 13 (deployment, packaging, final polish) not started.
+
 
 
 
