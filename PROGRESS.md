@@ -434,7 +434,7 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: B5 (added Phase 12 dataset inventory table, cross-product consistency results, and NDVI limitation to docs/data_sources.md). Next task: B6 (build snapshots and verify offline mode with zero outbound attempts).
+Last completed task: B6 (built snapshots latest_30d.json and sylhet_2022.json; verified offline mode with 0 outbound attempts; all 11 checks pass). Next task: B7 (confirm git status shows no .env, .db, data/cache or data/audio files staged).
 
 
 

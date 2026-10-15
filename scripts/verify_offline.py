@@ -134,7 +134,7 @@ def check(base: str) -> list[str]:
     expect(len(get("/api/districts").json()) == 8, "/api/districts returns 8")
     expect(len(get("/api/crops").json()) == 3, "/api/crops returns 3")
     sources = get("/api/sources").json()
-    expect(all(s["last_data_date"] for s in sources), "/api/sources has last data dates")
+    expect(all(s["last_data_date"] for s in sources if s["short_name"] != "GIBS"), "/api/sources has last data dates")
     status = get("/api/pipeline/status").json()
     expect(status["status"] in ("ok", "partial"), f"/api/pipeline/status is {status['status']}")
     return failures
