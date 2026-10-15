@@ -201,3 +201,43 @@ Days scored per district: 365 (of 365).
 
 <!-- validation:end -->
 
+### Definitions used
+
+- **First Moderate:** First day at Moderate or High risk (flood score >= 40.0).
+- **First High:** First day at High risk (flood score >= 70.0) on or after the first Moderate day.
+- **Reference onset:** 2022-06-16.
+- **Lead time:** Reference onset minus first High in days (`onset - first_high`). For Sylhet 2022, 2022-06-16 minus 2022-05-15 = 32 days.
+- **False alarm:** High day after 2022-06-30 up to 2022-09-30. This definition is my choice because the spec does not define the flood period; the report also splits High days before onset (22 days), onset to 2022-06-30 (11 days in Run A / 10 days in Run B), and after 2022-06-30 (0 in Run A due to run end date, 9 in Run B).
+
+### Reference onset citation
+
+> Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), 'Annual Flood Report 2022' & UN OCHA / ReliefWeb 'Bangladesh: Floods - Jun 2022': Surma-Kushiyara river basin crossed danger level with catastrophic inundation of Sylhet on 16 June 2022.
+
+### Plain-words meaning of each result
+
+1. **Event backtest (Sylhet, June 2022):**
+   - **Lead time:** 32 days. The system warned of High flood risk on 2022-05-15, well before the catastrophic flood crest on 2022-06-16, meeting the target of at least 3 days.
+   - **Pre-onset warning persistence:** High flood risk was sustained for 22 days before the onset (dating from mid-May pre-monsoon downpours).
+   - **Post-onset coverage:** High flood risk was maintained for 11 days (Run A) / 10 days (Run B) between 16 June and 30 June during the inundation peak.
+   - **Post-event false alarms:** In the extended Run B (to 30 September), 9 days registered High flood risk between July and September (specifically early July and mid-September rain spells).
+
+2. **Cross-product consistency (June 2022):**
+   - **Sylhet:** Pearson correlation $r = 0.652$ with a mean absolute difference of 22.94 mm/day. IMERG total was 1352.0 mm compared to POWER total of 1554.0 mm (mean bias -6.73 mm/day). Both products captured the extreme rainfall event, though POWER centroid values yielded higher total accumulation.
+   - **Rajshahi:** Pearson correlation $r = 0.555$ with a mean absolute difference of 4.65 mm/day. IMERG total was 126.6 mm vs POWER 156.5 mm (mean bias -1.00 mm/day).
+
+3. **Seasonality checks (2022 full year):**
+   - **Flood score for Sylhet peaks between June and September (PASS):** Peak month by monthly mean was June (78.7).
+   - **Flood score for Sunamganj peaks between June and September (PASS):** Peak month by monthly mean was June (83.5).
+   - **Drought score for Rajshahi is higher in March and April than in July (FAIL):** Monthly means were March 26.1, April 64.5, and July 76.4. The score peaked in July because of severe rainfall deficit and high temperatures in July 2022.
+   - **Salinity score for Satkhira is higher in March to May than in August (PASS):** Monthly means were March 79.4, April 92.0, May 52.2, and August 28.2.
+   - **Salinity score for Khulna is higher in March to May than in August (PASS):** Monthly means were March 64.2, April 68.9, May 39.0, and August 17.5.
+   - **Salinity score for Rajshahi stays below 20 in every month (PASS):** Highest daily score in any month was 0.0 (January), confirming inland districts never trigger salinity warnings.
+
+### Limitations
+
+- **High risk sustained for many days before onset:** Sylhet sustained High flood risk for 22 days before the reference onset date of 2022-06-16 (from 2022-05-15 onwards). While this satisfies the nominal lead time target (32 days >= 3 days), sustained High alerts over an entire month ahead of the major river crest risk creating alert fatigue among farmers.
+- **Seasonality check failure for Rajshahi drought:** The check that Rajshahi drought score is higher in March and April than July failed (March 26.1, April 64.5 vs July 76.4). While July 2022 in northwestern Bangladesh suffered an abnormal meteorological dry spell and heat anomaly, the scoring formula did not reproduce the typical climatological peak expected in the pre-monsoon dry season.
+- **Winter flood artifacts:** During dry winter months (January–February and December), several districts show elevated flood scores (means between 65 and 84) because the baseline percentiles and soil wetness terms yield high risk scores despite low absolute rainfall.
+- **False alarm definition and counts:** Under our chosen false-alarm definition (High days after 2022-06-30 up to 2022-09-30), Run B had 9 false alarm days. Because the specification does not define the official duration of the 2022 flood season, post-June rain events in Sylhet are counted as false alarms here, though they may represent actual subsequent flood pulses.
+
+
