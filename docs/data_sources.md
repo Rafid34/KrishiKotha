@@ -102,3 +102,32 @@ Command: `python scripts/inspect_smap.py 2026-10-10` (file `SMAP_L4_SM_gph_20261
 - Spec guessed tile matrix sets `2km` and `250m`; real ones are the `GoogleMapsCompatible_Level*` sets above.
 - `scripts/probe_gibs_tiles.py`: dates inside a period snap to it (same bytes for 2022-06-10 and 2022-06-16); dates before coverage return HTTP 404, so the map shows a "no imagery for this date" message.
 - Attribution "Imagery: NASA GIBS" is shown in the overlay control and the Leaflet attribution bar.
+
+## Phase 12
+
+### Comprehensive dataset inventory
+
+| Short name | Product version | Spatial & temporal resolution | Latency | Access method | Observed deviations & handling |
+|---|---|---|---|---|---|
+| `POWER_DAILY` | `V2` | 0.5° × 0.625° (MERRA-2 grid), daily point | 2 to 3 days | NASA POWER REST API (JSON endpoint) | `fill_value: -999.0`; query parameters: `PRECTOTCORR,T2M_MAX,RH2M,GWETROOT`. Serves as primary temperature/humidity source and fallback soil moisture source. |
+| `GPM_3IMERGDL` | `V07` | 0.1° × 0.1°, daily | ~14 hours | Earthdata CMR search + HTTPS download (NetCDF4) | Layout is `(time, lon, lat)` instead of `(lat, lon)`; parser transposes coordinates; units `mm/day` (rate, no x24); `_FillValue` -9999.9 masked. Used for live runs. |
+| `GPM_3IMERGDF` | `V07` | 0.1° × 0.1°, daily | ~1 year (historical archive) | Earthdata CMR search + HTTPS download (NetCDF4) | Same coordinate layout `(time, lon, lat)`; gauge-calibrated, yielding lower accumulations than Late Run; used for 2022 backtest and validation. |
+| `SPL4SMGP` | `008` | 9 km cylindrical EASE-Grid 2.0, 3-hourly (06:00 UTC used) | 2 to 3 days | Earthdata CMR search + HTTPS download (HDF5 via `h5py`) | Group `Geophysical_Data/sm_rootzone_pctl`. Coordinates are 1-D invariant (`cell_lat` row, `cell_lon` col). Masked/water cells return fill (-9999) for Sunamganj, Khulna, Barishal, which seamlessly fall back to POWER `GWETROOT`. Raw files deleted after extraction; daily district JSON cached. |
+| `MOD13Q1` | `061` | 250 m, 16-day composite | ~1 month latency; ~15-20 min AppEEARS task processing | AppEEARS REST API point task (CSV bundle) | Returns HTTP 303 upon completion, no `status` key during processing. Values are pre-scaled floats (e.g. 0.4311). Cached per task/window. Fallback to Level 1 salinity formula without NDVI (`degraded: false`) when pending or offline. |
+| `GIBS` | WMTS | Tile matrix sets `GoogleMapsCompatible_Level6` and `Level9` | Near real-time / periodic imagery | NASA GIBS WMTS REST tile endpoint | Tile matrix sets differ from spec draft (`GoogleMapsCompatible_Level*` used). `MODIS_Terra_NDVI_8Day` only starts 2025-02-12, so `MODIS_Terra_L3_NDVI_16Day` was added to cover historical 2022 events. |
+
+### Cross-product consistency (June 2022)
+
+Comparison between IMERG Final Run daily district-box mean against NASA POWER `PRECTOTCORR` at district centroid (mm/day) across the 30 days of June 2022 (`2022-06-01` to `2022-06-30`):
+
+| District | Days | Pearson r | Mean absolute difference (mm/day) | Mean IMERG minus POWER (mm/day) | IMERG total (mm) | POWER total (mm) |
+|---|---|---|---|---|---|---|
+| Sylhet | 30 | 0.652 | 22.94 | -6.73 | 1352.0 | 1554.0 |
+| Rajshahi | 30 | 0.555 | 4.65 | -1.00 | 126.6 | 156.5 |
+
+Both products capture the June 2022 deluge in Sylhet and moderate precipitation in Rajshahi. In Sylhet, IMERG reported 1352.0 mm total compared to POWER's 1554.0 mm, with a moderate-to-strong correlation ($r = 0.652$).
+
+### NDVI limitation
+
+In the 2022 event run, one NDVI composite is applied to all scored days, so 2022 salinity may use an NDVI dated after the scored day; flood and drought are unaffected.
+

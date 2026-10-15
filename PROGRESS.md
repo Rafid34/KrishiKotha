@@ -434,7 +434,7 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: B4 (provenance check completed for Sylhet 2022-06-16, tracing inputs to IMERG granule/file, POWER request URL, and SMAP granule/cache; documented schema gaps in methodology.md). Next task: B5 (update docs/data_sources.md with Phase 12 dataset table, cross-product result, and NDVI limitation).
+Last completed task: B5 (added Phase 12 dataset inventory table, cross-product consistency results, and NDVI limitation to docs/data_sources.md). Next task: B6 (build snapshots and verify offline mode with zero outbound attempts).
 
 
 
