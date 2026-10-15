@@ -9,32 +9,48 @@ import { getDistricts, getRisk } from '../api/client.js';
 // Demo date — 2022-06-16 is the key event date in the snapshots
 const DEMO_DATE = '2022-06-16';
 
-export default function Dashboard() {
+export default function Dashboard({ initialDistrictError = null, initialRiskError = null } = {}) {
   const { lang } = useLang();
 
   const [hazard, setHazard] = useState('flood');
   const [date, setDate] = useState(DEMO_DATE);
   const [districts, setDistricts] = useState([]);
+  const [districtError, setDistrictError] = useState(initialDistrictError);
   const [riskResponse, setRiskResponse] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(!initialRiskError);
+  const [error, setError] = useState(initialRiskError);
 
-  // Fetch district list once
-  useEffect(() => {
+  // Fetch district list with error state and retry
+  const fetchDistricts = useCallback(() => {
+    setDistrictError(null);
     getDistricts()
-      .then(setDistricts)
-      .catch(() => setDistricts([]));
+      .then(data => {
+        setDistricts(data);
+        setDistrictError(null);
+      })
+      .catch(err => {
+        setDistrictError(err.message || 'Failed to load districts');
+        setDistricts([]);
+      });
   }, []);
 
-  // Fetch risk data whenever date changes
   useEffect(() => {
+    fetchDistricts();
+  }, [fetchDistricts]);
+
+  // Fetch risk data whenever date changes
+  const fetchRisk = useCallback(() => {
     setLoading(true);
     setError(null);
     getRisk({ date })
       .then(data => { setRiskResponse(data); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
+      .catch(err => { setError(err.message || 'Failed to load risk data'); setLoading(false); });
   }, [date]);
+
+  useEffect(() => {
+    fetchRisk();
+  }, [fetchRisk]);
 
   const handleDateChange = useCallback(e => setDate(e.target.value), []);
   const handleHazardChange = useCallback(h => setHazard(h), []);
@@ -104,6 +120,14 @@ export default function Dashboard() {
       <div className="dashboard__body">
         {/* Map column */}
         <section className="dashboard__map-col" aria-label="Risk map">
+          {districtError && (
+            <div className="dashboard__error dashboard__error--districts" role="alert">
+              <span>{lang === 'bn' ? 'জেলা তথ্য লোড করতে ব্যর্থ হয়েছে' : 'Failed to load districts'}: {districtError}</span>
+              <button type="button" className="dashboard__retry-btn" onClick={fetchDistricts}>
+                {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+              </button>
+            </div>
+          )}
           {loading && (
             <div className="dashboard__loading" role="status" aria-live="polite">
               <span lang={lang === 'bn' ? 'bn' : undefined}>{t('loading', lang)}</span>
@@ -113,6 +137,9 @@ export default function Dashboard() {
             <div className="dashboard__error" role="alert">
               <span lang={lang === 'bn' ? 'bn' : undefined}>{t('error', lang)}</span>
               <span className="dashboard__error-detail">{error}</span>
+              <button type="button" className="dashboard__retry-btn" onClick={fetchRisk}>
+                {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+              </button>
             </div>
           )}
           {!loading && !error && riskData.length === 0 && (
@@ -273,9 +300,36 @@ style.textContent = `
 .dashboard__error {
   color: var(--risk-high);
 }
+.dashboard__error--districts {
+  position: relative;
+  inset: auto;
+  z-index: 5;
+  padding: var(--space-2) var(--space-4);
+  background: #FEE2E2;
+  border: 1px solid #F87171;
+  color: #B91C1C;
+  border-radius: var(--radius-md);
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
 .dashboard__error-detail {
   font-size: var(--text-xs);
   color: var(--ink-muted);
+}
+.dashboard__retry-btn {
+  padding: 4px 12px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.dashboard__retry-btn:hover {
+  background: var(--brand-dark);
 }
 
 @media (max-width: 480px) {

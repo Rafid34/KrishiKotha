@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -27,8 +27,9 @@ export default function EventReplay() {
   const playTimerRef = useRef(null);
 
   // Load backtest replay data from /api/backtest/sylhet-2022
-  useEffect(() => {
+  const loadData = useCallback(() => {
     setLoading(true);
+    setError(null);
     getBacktestSylhet()
       .then(res => {
         setData(res);
@@ -43,10 +44,14 @@ export default function EventReplay() {
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        setError(err.message || 'Failed to load replay data');
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Play/Pause interval timer
   useEffect(() => {
@@ -153,6 +158,9 @@ export default function EventReplay() {
       <div className="replay-page replay-page--error" role="alert">
         <h2>{t('error', lang)}</h2>
         <p>{error}</p>
+        <button type="button" className="replay-retry-btn" onClick={loadData}>
+          {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+        </button>
         <p className="replay-disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
           {t('disclaimer', lang)}
         </p>
@@ -512,6 +520,22 @@ style.textContent = `
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.replay-retry-btn {
+  margin-top: var(--space-3);
+  padding: 6px 16px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.replay-retry-btn:hover {
+  background: var(--brand-dark);
 }
 
 .replay-header {

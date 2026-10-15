@@ -89,12 +89,19 @@ export default function Simulator() {
   // Active diagnosis metadata
   const [diagnosis, setDiagnosis] = useState(null);
 
+  const [districtError, setDistrictError] = useState(null);
+
   // Load districts metadata for labels
-  useEffect(() => {
+  const loadDistricts = useCallback(() => {
+    setDistrictError(null);
     getDistricts()
       .then(setDistricts)
-      .catch(() => setDistricts([]));
+      .catch(err => setDistrictError(err.message || 'Failed to load districts'));
   }, []);
+
+  useEffect(() => {
+    loadDistricts();
+  }, [loadDistricts]);
 
   /** Core SMS send handler */
   const handleSendMessage = useCallback(async (textToSend) => {
@@ -291,6 +298,15 @@ export default function Simulator() {
           )}
         </div>
       </div>
+
+      {districtError && (
+        <div className="simulator-error-banner" role="alert">
+          <span>{lang === 'bn' ? 'জেলা তথ্য লোড করতে ব্যর্থ হয়েছে' : 'Failed to load districts'}: {districtError}</span>
+          <button type="button" className="simulator-retry-btn" onClick={loadDistricts}>
+            {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+          </button>
+        </div>
+      )}
 
       {/* Main 2-Column Grid (Desktop) / Stacked (Mobile) */}
       <div className="simulator-grid">
@@ -538,6 +554,33 @@ if (style && !document.getElementById('simulator-page-styles')) {
   margin: 0 auto;
   padding: var(--space-4) var(--space-4) var(--space-10) var(--space-4);
   width: 100%;
+}
+
+.simulator-error-banner {
+  padding: var(--space-2) var(--space-4);
+  background: #FEE2E2;
+  border: 1px solid #F87171;
+  color: #B91C1C;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+}
+
+.simulator-retry-btn {
+  padding: 4px 12px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.simulator-retry-btn:hover {
+  background: var(--brand-dark);
 }
 
 /* Header */
