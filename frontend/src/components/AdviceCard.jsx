@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import RiskBadge from './RiskBadge.jsx';
 import { useLang } from '../i18n/index.jsx';
 import { hazardLabel } from '../utils/risk.js';
+import { playAudio } from '../utils/audio.js';
 
 /**
  * AdviceCard — renders generated crop advice with Bangla and English copy,
@@ -11,7 +12,7 @@ import { hazardLabel } from '../utils/risk.js';
  * - Bangla text at least 18 px in Noto Sans Bengali
  * - English text in Inter
  * - Rule ID tag
- * - Level 2 voice call / audio playback button
+ * - Level 2 audio button playing the Bangla MP3 from `audio_url` (F2.4); text only on failure
  *
  * @param {{
  *   advice: {
@@ -21,13 +22,13 @@ import { hazardLabel } from '../utils/risk.js';
  *     hazard?: string|null,
  *     level?: string|null,
  *     audio_url?: string|null
- *   }|null,
- *   onCall?: () => void
+ *   }|null
  * }} props
  */
-export default function AdviceCard({ advice, onCall }) {
+export default function AdviceCard({ advice }) {
   const { lang } = useLang();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioError, setAudioError] = useState(false);
 
   if (!advice) {
     return (
@@ -41,26 +42,16 @@ export default function AdviceCard({ advice, onCall }) {
     );
   }
 
-  const handlePlayAudio = () => {
-    if (onCall) {
-      onCall();
-      return;
-    }
-
-    // Level 2 Web Speech fallback when audio_url is not a hosted file
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window && advice.text_bn) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(advice.text_bn);
-        utterance.lang = 'bn-BD';
-        utterance.rate = 0.9;
-        utterance.onstart = () => setIsPlaying(true);
-        utterance.onend = () => setIsPlaying(false);
-        utterance.onerror = () => setIsPlaying(false);
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        setIsPlaying(false);
-      }
+  const handlePlayAudio = async () => {
+    setAudioError(false);
+    setIsPlaying(true);
+    try {
+      await playAudio(advice.audio_url);
+    } catch {
+      // gTTS offline (HTTP 503), TTS disabled, or playback blocked: show the text only.
+      setAudioError(true);
+    } finally {
+      setIsPlaying(false);
     }
   };
 
@@ -91,7 +82,7 @@ export default function AdviceCard({ advice, onCall }) {
           type="button"
           className={`advice-card__audio-btn ${isPlaying ? 'advice-card__audio-btn--playing' : ''}`}
           onClick={handlePlayAudio}
-          title={lang === 'bn' ? 'বাংলা অডিও শুনুন (লেভেল ২)' : 'Play Bangla voice (Level 2)'}
+          title={lang === 'bn' ? 'বাংলা অডিও শুনুন' : 'Play Bangla voice'}
           aria-label={lang === 'bn' ? 'পরামর্শ শুনুন' : 'Listen to advisory'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -101,6 +92,14 @@ export default function AdviceCard({ advice, onCall }) {
           <span>{isPlaying ? (lang === 'bn' ? 'শুনছেন…' : 'Playing…') : (lang === 'bn' ? 'শুনুন' : 'Audio')}</span>
         </button>
       </div>
+
+      {audioError && (
+        <p className="advice-card__audio-note" role="status">
+          {lang === 'bn'
+            ? 'এখন অডিও পাওয়া যাচ্ছে না। পরামর্শ শুধু লেখায় দেখানো হলো।'
+            : 'Audio is unavailable right now. Showing the text only.'}
+        </p>
+      )}
 
       <div className="advice-card__body">
         {/* Bangla text: guaranteed >= 18px in Noto Sans Bengali */}
@@ -235,6 +234,13 @@ if (style && !document.getElementById('advice-card-styles')) {
   0% { opacity: 1; }
   50% { opacity: 0.6; }
   100% { opacity: 1; }
+}
+
+.advice-card__audio-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  font-style: italic;
 }
 
 .advice-card__body {

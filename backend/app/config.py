@@ -36,11 +36,24 @@ class Settings(BaseSettings):
     bbox_north: float = 26.7
     baseline_start_year: int = 2001
     baseline_end_year: int = 2020
+    tts_enabled: bool = True
+    audio_dir: str = "./data/audio"
+    twilio_enabled: bool = False
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
+    public_base_url: str = "http://localhost:8000"
 
     @property
     def bbox(self) -> tuple[float, float, float, float]:
         """Bangladesh bounding box as (west, south, east, north)."""
         return (self.bbox_west, self.bbox_south, self.bbox_east, self.bbox_north)
+
+    @property
+    def audio_path(self) -> Path:
+        """AUDIO_DIR as an absolute path (relative values resolve against the repo root)."""
+        path = Path(self.audio_dir)
+        return path if path.is_absolute() else (REPO_ROOT / path).resolve()
 
     @property
     def cors_origin_list(self) -> list[str]:

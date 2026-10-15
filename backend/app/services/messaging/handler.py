@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
@@ -20,6 +21,44 @@ def hash_phone(phone_e164: str) -> str:
     """Compute SHA-256 with salt for subscriber phone lookup (Section 7.1)."""
     normalized = phone_e164.strip()
     return hashlib.sha256(f"{PHONE_SALT}:{normalized}".encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class CurrentAdvice:
+    """Bangla advice for one district and crop, with the rule that produced it."""
+
+    rule_id: str
+    text_bn: str
+    level: str
+
+
+def current_advice(
+    db: Session, district_id: str, crop_id: str, as_of_date: date | None = None
+) -> CurrentAdvice:
+    """Select and compose advice from the snapshot on `as_of_date` (default: latest).
+
+    Falls back to the `none_low` message when no snapshot exists.
+    """
+    query = db.query(RiskSnapshot).filter_by(district_id=district_id)
+    if as_of_date:
+        snapshot = query.filter_by(date=as_of_date).first()
+    else:
+        snapshot = query.order_by(RiskSnapshot.date.desc()).first()
+
+    if snapshot is None:
+        return CurrentAdvice("none_low", compose_advice("none_low").text_bn, "low")
+
+    stage_info = get_crop_stage(crop_id, snapshot.date)
+    rule_result = select_advice_rule(
+        flood_score=snapshot.flood_score,
+        drought_score=snapshot.drought_score,
+        salt_score=snapshot.salt_score,
+        crop_id=crop_id,
+        stage_key=stage_info.stage_key,
+        sensitivities=stage_info.sensitivities,
+    )
+    composed = compose_advice(rule_result.rule_id)
+    return CurrentAdvice(rule_result.rule_id, composed.text_bn, rule_result.level)
 
 
 def handle_inbound_sms(
@@ -75,37 +114,9 @@ def handle_inbound_sms(
         )
 
         # 2. Advice message reply based on latest snapshot
-        if as_of_date:
-            snapshot = (
-                db.query(RiskSnapshot)
-                .filter_by(district_id=parsed.district_id, date=as_of_date)
-                .first()
-            )
-        else:
-            snapshot = (
-                db.query(RiskSnapshot)
-                .filter_by(district_id=parsed.district_id)
-                .order_by(RiskSnapshot.date.desc())
-                .first()
-            )
-
-        if snapshot is not None:
-            stage_info = get_crop_stage(parsed.crop_id, snapshot.date)
-            rule_result = select_advice_rule(
-                flood_score=snapshot.flood_score,
-                drought_score=snapshot.drought_score,
-                salt_score=snapshot.salt_score,
-                crop_id=parsed.crop_id,
-                stage_key=stage_info.stage_key,
-                sensitivities=stage_info.sensitivities,
-            )
-            advice_obj = compose_advice(rule_result.rule_id)
-            advice_text = advice_obj.text_bn
-            rule_id = rule_result.rule_id
-        else:
-            advice_obj = compose_advice("none_low")
-            advice_text = advice_obj.text_bn
-            rule_id = "none_low"
+        current = current_advice(db, parsed.district_id, parsed.crop_id, as_of_date)
+        advice_text = current.text_bn
+        rule_id = current.rule_id
 
         db.add(
             MessageLog(

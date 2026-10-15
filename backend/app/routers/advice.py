@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from ..config import get_settings
 from ..db import get_db
 from ..errors import not_found
 from ..models import Crop, District, RiskSnapshot
@@ -11,6 +12,7 @@ from ..schemas import AdviceOut, AdviceRequest
 from ..services.advice.composer import compose_advice
 from ..services.advice.rules import select_advice_rule
 from ..services.advice.stages import get_crop_stage
+from ..services.messaging.tts import audio_url, register_text
 
 router = APIRouter(prefix="/api", tags=["advice"])
 
@@ -65,11 +67,14 @@ def get_advice(payload: AdviceRequest, db: Session = Depends(get_db)) -> AdviceO
     # 6. Compose advice
     composed = compose_advice(rule_result.rule_id)
 
+    # 7. Voice: register the text only; the MP3 is generated on first GET /api/audio/{filename}.
+    voice_url = audio_url(register_text(composed.text_bn)) if get_settings().tts_enabled else None
+
     return AdviceOut(
         rule_id=rule_result.rule_id,
         text_bn=composed.text_bn,
         text_en=composed.text_en,
         hazard=rule_result.hazard,
         level=rule_result.level,
-        audio_url=None,
+        audio_url=voice_url,
     )

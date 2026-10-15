@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 # Tests never read the real `.env` data mode: the NASA clients must stay mockable.
 os.environ["DATA_MODE"] = "live"
@@ -17,6 +18,23 @@ from sqlalchemy.pool import StaticPool  # noqa: E402
 from backend.app.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
+
+
+ADMIN_KEY = "test-admin-key"
+
+
+@pytest.fixture(autouse=True)
+def messaging_env(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> Iterator[None]:
+    """Isolate audio files, admin key and gateway flags from the real `.env`."""
+    monkeypatch.setenv("AUDIO_DIR", str(tmp_path / "audio"))
+    monkeypatch.setenv("TTS_ENABLED", "true")
+    monkeypatch.setenv("TWILIO_ENABLED", "false")
+    monkeypatch.setenv("ADMIN_API_KEY", ADMIN_KEY)
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture()

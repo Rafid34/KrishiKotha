@@ -103,7 +103,9 @@
     "statusStopped": "Subscriber deactivated",
     "statusHelp": "Help command answered",
     "statusUnrecognized": "Unrecognized message. Help text sent.",
-    "callNotice": "Simulated voice call: Playing audio via browser speech synthesis (Level 2)"
+    "callNotice": "Calling… playing Bangla voice advice",
+    "callUnavailable": "Voice audio is unavailable right now. The advice is shown as text only.",
+    "callNeedAdvice": "Send a district and crop first (for example SYLHET AMAN), then press Call."
   },
   "fresh": {
     "rain": "Rainfall: NASA GPM IMERG V07, data to",

@@ -175,6 +175,21 @@ class SimSmsOut(BaseModel):
     subscriber_id: int | None = None
 
 
+class BroadcastRequest(BaseModel):
+    """Body of `POST /api/admin/broadcast`; `dry_run` defaults to true so nothing is sent."""
+
+    district_id: str
+    min_level: Level = "moderate"
+    dry_run: bool = True
+    date: dt_date | None = None
+
+
+class BroadcastOut(BaseModel):
+    recipients: int
+    sample_text_bn: str | None = None
+    sent: int
+
+
 class ReplayStep(BaseModel):
     step: int
     label: str

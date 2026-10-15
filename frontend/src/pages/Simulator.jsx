@@ -5,6 +5,7 @@ import RiskBadge from '../components/RiskBadge.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 import { postSimSms, postAdvice, getRisk, getDistricts } from '../api/client.js';
 import { hazardLabel } from '../utils/risk.js';
+import { playAudio } from '../utils/audio.js';
 import { formatNumber, formatDate } from '../utils/format.js';
 
 // Default demo date for event reconstruction & testing
@@ -219,27 +220,22 @@ export default function Simulator() {
     handleSendMessage(cmd);
   }, [handleSendMessage]);
 
-  /** Simulated Voice Call handler (Level 2) */
-  const handleVoiceCall = useCallback(() => {
-    // If we have active advice with Bangla text, speak it
-    const spokenText = diagnosis?.advice?.text_bn ||
-      (messages.find(m => m.sender === 'krishi')?.text) ||
-      (lang === 'bn' ? 'কৃষি কথায় স্বাগতম।' : 'Welcome to Krishi Kotha.');
-
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(spokenText);
-        utterance.lang = 'bn-BD';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        // graceful ignore
-      }
+  /** Voice Call handler (F2.4): plays the Bangla MP3 for the current advice, else text only. */
+  const handleVoiceCall = useCallback(async () => {
+    const advice = diagnosis?.advice;
+    if (!advice) {
+      setCallNotice(t('simulator.callNeedAdvice', lang));
+      return;
     }
 
     setCallNotice(t('simulator.callNotice', lang));
-  }, [diagnosis, messages, lang]);
+    try {
+      await playAudio(advice.audio_url);
+      setCallNotice(null);
+    } catch {
+      setCallNotice(t('simulator.callUnavailable', lang));
+    }
+  }, [diagnosis, lang]);
 
   const handleClearChat = useCallback(() => {
     setMessages([]);
@@ -472,10 +468,7 @@ export default function Simulator() {
                 {/* Advice Card (Bangla & English + Rule ID) */}
                 {diagnosis.advice && (
                   <div className="diagnosis-advice-section">
-                    <AdviceCard
-                      advice={diagnosis.advice}
-                      onCall={handleVoiceCall}
-                    />
+                    <AdviceCard advice={diagnosis.advice} />
                   </div>
                 )}
 

@@ -281,7 +281,8 @@ def test_advice_endpoint(client: TestClient, loaded: sessionmaker[Session]) -> N
     assert data["level"] == "high"
     assert "বন্যার ঝুঁকি বেশি" in data["text_bn"]
     assert "Flood risk is high" in data["text_en"]
-    assert data["audio_url"] is None
+    assert data["audio_url"].startswith("/api/audio/")
+    assert data["audio_url"].endswith(".mp3")
 
     # 2. Unknown district -> 404
     resp_dist = client.post(

@@ -13,6 +13,7 @@
 | 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
 | 9: Farmer simulator UI | Done | Verified: 147 backend tests pass (18 in `test_api.py`); 32 vitest tests pass (7 in `simulator.test.jsx`); `npm run build` succeeds; `PhoneMockup` renders centered feature phone mockup (~320 px wide) with monochrome LCD screen, keypad, input box, Send button, Call button; Bangla text guaranteed >= 18 px in Noto Sans Bengali (`lang="bn"`); Quick-fill buttons for `SYLHET AMAN`, `KHULNA BORO`, `RAJSHAHI AMAN`, `HELP`, `STOP`; typing `SYLHET AMAN` on demo date 2022-06-16 returns welcome and flood advice messages; side panel renders Rule ID (`flood_high_early`), triggering hazard (`Flood` / High), and underlying scores (Drought 0.9, Flood 98.0, Salinity 0.0); `AdviceCard` renders Bangla (>=18px) and English text with audio button; invalid input returns help message; zero horizontal overflow at 360 px width. |
 | 10: SMAP, MODIS NDVI, GIBS overlays | Done | Verified: 167 backend tests pass; 45 vitest tests pass; `npm run build` succeeds; real SPL4SMGP v008 file inspected first (`Geophysical_Data/sm_rootzone_pctl`, EASE-Grid 2.0); live run 2026-10-10 to 2026-10-13 shows `soil_source: SMAP_L4` for 5 districts and the POWER fallback (shown in UI) for 3 water-cell districts; MOD13Q1.061 NDVI anomaly used for 32 of 32 district-days with product version in the panel; GIBS ids confirmed from GetCapabilities; overlay toggle with attribution and no-imagery fallback; `/api/sources` lists SMAP and MODIS. See Phase 10 details. |
+| 11: Voice and Twilio gateway | Done | Verified: 187 backend tests pass (20 new in `test_voice_gateway.py`); 50 vitest tests pass (5 new in `audio.test.js`); `npm run build` succeeds; real gTTS call returned 72 KB `audio/mpeg` for the Sylhet advice; with `TWILIO_ENABLED=false` app startup imports neither `twilio` nor `gtts` (subprocess test); `POST /api/admin/broadcast` without `X-Admin-Key` returns 401, with the key and no `dry_run` it is a dry run (`sent: 0`, nothing logged or sent); Twilio webhooks tested with real signature validation (403 on bad signature) using a stubbed TTS. Manual checks not done: browser playback of the Call button, and a real Twilio SMS round trip (no verified number or tunnel available). See Phase 11 details. |
 
 ## Spec patch (2026-10-15)
 
@@ -406,7 +407,7 @@ Implemented Phase 9: Farmer simulator UI (Sections 7.2, 8.2, 8.4, 9).
 
 ## Phase 10 details
 
-Last completed task: 10.6 and docs. Next task: Phase 11 (not started).
+Last completed task: 10.6 and docs. Phase 10 is complete.
 
 - `services/nasa/smap.py`: group/variable confirmed from the real file before coding; nearest-cell lookup from 1-D lat/lon vectors; raw granule deleted; per-day JSON cache. CLI `python -m backend.app.services.nasa.smap --date 2022-06-16`.
 - `services/nasa/modis.py`: AppEEARS login, point task, poll, bundle CSV, NDVI baseline functions. Three real-API differences found and fixed (303 on done, no `status` key while processing, NDVI already scaled); see `docs/data_sources.md`.
@@ -416,3 +417,18 @@ Last completed task: 10.6 and docs. Next task: Phase 11 (not started).
 - Frontend: `config/layers.js` (confirmed ids, real tile matrix sets), `OverlayControl.jsx`, overlay in `RiskMap.jsx`, `SourceNotes.jsx` in `FactorBars.jsx`; fixed the `vegetation_anomaly` label key.
 - Decisions in `docs/methodology.md` (Phase 10): salinity without NDVI is `degraded: false` (resolves the earlier F2.2 vs 7.6 note); no `/api/layers` route; extra 16-day NDVI GIBS layer because the 8-day layer starts 2025.
 - Not done: snapshot JSON files not re-exported (Phase 12); Phase 10 live rows exist only in the local database.
+
+## Phase 11 details
+
+Last completed task: 11.5. Next task: Phase 12 (not started).
+
+- `services/messaging/tts.py` (11.1): `<sha256(text)>.mp3` in `AUDIO_DIR` (default `data/audio/`, gitignored). Text is registered in a `.txt` sidecar and the MP3 is synthesized with gTTS (`lang="bn"`) on first request, once, under a lock. gTTS is imported only inside `synthesize`.
+- `GET /api/audio/{filename}` (11.2): `audio/mpeg`; 404 for unknown or malformed names; 503 with the JSON error body when gTTS fails or `TTS_ENABLED=false` and the MP3 is missing. `POST /api/advice` now returns `audio_url` (null when `TTS_ENABLED=false`).
+- Frontend (11.2): `utils/audio.js` plays the MP3 (one clip at a time). The Call button in `Simulator.jsx` and the audio button in `AdviceCard.jsx` use it; on failure they show a text-only notice. The Web Speech fallback was removed. English and Bangla strings added.
+- `services/messaging/twilio_gateway.py` and `gateway_loader.py` (11.3): Twilio is imported only by `load_twilio_gateway()` after the `TWILIO_ENABLED` check. `/api/sms/inbound` and `/api/voice/inbound` validate `X-Twilio-Signature` against `PUBLIC_BASE_URL` and return TwiML (`text/xml`); both return 404 while the flag is off. Voice plays the cached MP3 through the public URL.
+- `routers/admin.py` (11.4): router-level `X-Admin-Key` dependency (401 if missing, wrong or the configured key is empty); `POST /api/admin/broadcast` with `dry_run` defaulting to true. Live sends use Twilio when enabled, otherwise the in-memory simulator gateway.
+- `handler.py`: advice selection extracted into `current_advice()`, shared by SMS registration, voice and broadcast (behaviour unchanged, all earlier tests pass).
+- README (11.5): tunnel and webhook steps, broadcast example. Decisions are in `docs/methodology.md` (Phase 11).
+- `backend/tests/conftest.py`: autouse fixture isolates `AUDIO_DIR`, `TTS_ENABLED`, `TWILIO_ENABLED` and `ADMIN_API_KEY` from the real `.env`. `test_api.py::test_advice_endpoint` now expects an `audio_url`.
+- Not done: `POST /api/admin/pipeline/run` (Section 7.2) is outside the Phase 11 task list. The shipped `ADMIN_API_KEY=change-me` default still authenticates, so set a real key before exposing the app.
+
