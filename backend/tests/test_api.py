@@ -316,3 +316,15 @@ def test_sim_sms_roundtrip(client: TestClient, loaded: sessionmaker[Session]) ->
     assert len(help_data["replies"]) == 1
     assert "SYLHET AMAN" in help_data["replies"][0]["text"]
 
+    # Test with explicit date parameter
+    resp_date = client.post(
+        "/api/sim/sms",
+        json={"from": "+8801700000001", "body": "SYLHET AMAN", "date": "2022-06-16"},
+    )
+    assert resp_date.status_code == 200
+    date_data = resp_date.json()
+    assert len(date_data["replies"]) == 2
+    assert "স্বাগতম" in date_data["replies"][0]["text"]
+    assert "বন্যার ঝুঁকি বেশি" in date_data["replies"][1]["text"]
+
+

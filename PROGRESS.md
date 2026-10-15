@@ -11,6 +11,7 @@
 | 6: Advice engine, parser, SMS simulator API | Done | Verified: 140 tests pass (33 in `test_advice.py`, 38 in `test_parser.py`, 16 in `test_api.py`); verbatim Bangla templates from Section 7.4; 134-character limit enforced with `MessageLengthExceededError`; `POST /api/sim/sms` returns Bangla replies (welcome + advice) and logs 2 messages; observed conditions only, no forecasts. |
 | 7: Frontend scaffold and risk map dashboard | Done | Verified: 22 vitest tests pass; `npm run build` succeeds; map renders 8 district markers with OpenStreetMap tiles; date 2022-06-16 with flood hazard shows Sylhet High (score 98.01, red marker); RiskBadge and Legend follow Section 8.4 (icon shape + colour + text label); fonts self-hosted (@fontsource Inter & Noto Sans Bengali); 360 px mobile width verified with zero horizontal overflow. |
 | 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
+| 9: Farmer simulator UI | Done | Verified: 147 backend tests pass (18 in `test_api.py`); 32 vitest tests pass (7 in `simulator.test.jsx`); `npm run build` succeeds; `PhoneMockup` renders centered feature phone mockup (~320 px wide) with monochrome LCD screen, keypad, input box, Send button, Call button; Bangla text guaranteed >= 18 px in Noto Sans Bengali (`lang="bn"`); Quick-fill buttons for `SYLHET AMAN`, `KHULNA BORO`, `RAJSHAHI AMAN`, `HELP`, `STOP`; typing `SYLHET AMAN` on demo date 2022-06-16 returns welcome and flood advice messages; side panel renders Rule ID (`flood_high_early`), triggering hazard (`Flood` / High), and underlying scores (Drought 0.9, Flood 98.0, Salinity 0.0); `AdviceCard` renders Bangla (>=18px) and English text with audio button; invalid input returns help message; zero horizontal overflow at 360 px width. |
 
 ## Spec patch (2026-10-15)
 
@@ -339,5 +340,67 @@ Implemented Phase 8: District detail and event replay (Sections 7.2, 8.2, 8.4, 9
 - `GET /api/backtest/sylhet-2022`: verified returning HTTP 200 with 47 points, `lead_time_days: 14`, and 5 derived step dates.
 - Replay lead time equals API value: verified `EventReplay.jsx` displays `lead_time_days` from the API.
 - District detail verified: clicking district shows scores, TrendChart, FactorBars, and farmer advice.
+
+## Phase 9 details
+
+Implemented Phase 9: Farmer simulator UI (Sections 7.2, 8.2, 8.4, 9).
+
+### Implemented components
+
+- **`frontend/src/components/PhoneMockup.jsx`** (Task 9.1):
+  - Implements Section 8.2 feature phone layout: centered chassis (320 px wide) with dark matte casing, earpiece speaker slit, and brand label ("KRISHI 100").
+  - Monochrome LCD screen styling (`#CAD7B0` background gradient, dark pixel ink `#142210`, inner shadow, status bar with signal bars, battery `[85%]`, carrier "KrishiNet", and footer).
+  - Scrollable message viewport supporting user messages (`sender: 'farmer'`) and Krishi Kotha system replies (`sender: 'krishi'`).
+  - **Strict typography compliance**: Bangla messages rendered with `lang="bn"`, `font-size: 18px !important`, and `font-family: var(--font-bangla) !important` in Noto Sans Bengali.
+  - Physical feature phone keypad detailing: soft navigation keys (Call, End, 4-way D-Pad) and 12 alphanumeric keys (1–9, *, 0, #).
+  - Under-phone controls: accessible input box (`placeholder="SYLHET AMAN"`), Send button (`var(--brand)`), and Call button (Level 2 voice).
+  - Full keyboard accessibility and minimum 44 px touch targets.
+- **`frontend/src/components/AdviceCard.jsx`** (Task 9.2):
+  - Displays bilingual advice: Bangla message text (`lang="bn"`) guaranteed at least 18 px in Noto Sans Bengali, and English translation text (`lang="en"`).
+  - Metadata header: Rule ID badge (`Rule: flood_high_early`), triggering hazard name, and `RiskBadge` with accessible level indicator.
+  - Level 2 audio action: Call / Listen audio button with pulse animation during playback and Web Speech API fallback.
+  - Accessible empty state for uninitialized inputs.
+- **`frontend/src/pages/Simulator.jsx`** (Tasks 9.3, 9.4):
+  - Desktop 2-column layout (>=1024 px) with centered PhoneMockup on the left and Advisory Diagnosis side panel on the right; stacked responsive layout (<1024 px).
+  - Integrates with backend `/api/sim/sms`, `/api/advice`, and `/api/risk`.
+  - Quick-fill buttons (Task 9.4):
+    - `SYLHET AMAN` (Flash flood high risk demo)
+    - `KHULNA BORO` (Coastal salinity risk demo)
+    - `RAJSHAHI AMAN` (Drought risk demo)
+    - Plus `HELP` and `STOP` command chips.
+  - Advisory Diagnosis side panel:
+    - Rule ID chip (e.g. `flood_high_early`).
+    - Triggering Hazard and Level with `RiskBadge` (e.g. Flood - High).
+    - Underlying scores grid: 3 score cards (Drought, Flood, Salinity) with numeric score (0 to 100) and `RiskBadge`.
+    - Embedded `AdviceCard` showing bilingual advice.
+    - Simulation Date selector (defaults to demo date `2022-06-16`).
+    - Mandatory NASA disclaimer: *"Based on NASA satellite data. Not an official government warning."*
+- **Backend enhancements**:
+  - `backend/app/schemas.py`: added optional `date: dt_date | None = None` to `SimSmsRequest`.
+  - `backend/app/routers/messaging.py`: passed `as_of_date=payload.date` to `handle_inbound_sms`, enabling date-specific SMS simulation for demo dates.
+  - `backend/tests/test_api.py`: added `test_sim_sms_with_date_param`.
+- **i18n Localization**:
+  - `frontend/src/i18n/en.json` & `bn.json`: added complete translation dictionary for `simulator` namespace.
+- **Unit Tests**:
+  - `frontend/src/__tests__/simulator.test.jsx`: 7 Vitest tests covering AdviceCard (Bangla >=18px in Noto Sans Bengali, English translation, Rule ID, empty state), PhoneMockup (LCD screen, message list, Bangla >=18px, keypad controls), and quick-fill commands.
+
+### Verification
+
+- `pytest`: 147 backend tests pass (18 in `test_api.py`).
+- `npm test`: 32 frontend vitest tests pass across 3 test files (7 in `simulator.test.jsx`).
+- `npm run build`: Vite production bundle builds in 4.19s with zero errors.
+- `POST /api/sim/sms` with `{"from": "+8801700000000", "body": "SYLHET AMAN", "date": "2022-06-16"}` verified:
+  - Returns welcome message and flood high advice message in Bangla.
+  - Subscriber created with `active=True`.
+- Invalid input verified:
+  - `POST /api/sim/sms` with `INVALID INPUT` returns help message (`বুঝতে পারিনি। এভাবে লিখুন: SYLHET AMAN`).
+- Side panel diagnosis verified:
+  - Sylhet 2022-06-16 scores: Drought 0.87 (Low), Flood 98.01 (High), Salinity 0.0 (Low).
+  - Triggering hazard: Flood (High).
+  - Rule ID: `flood_high_early`.
+- Bangla typography verified:
+  - `font-size: 18px !important; font-family: var(--font-bangla) !important;` enforced on all Bangla spans with `lang="bn"`.
+- Mobile responsiveness:
+  - Verified at 360 px width with zero horizontal overflow (`phone-wrapper` max-width 320 px).
 
 

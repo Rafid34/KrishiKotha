@@ -138,6 +138,7 @@ class AdviceOut(BaseModel):
 class SimSmsRequest(BaseModel):
     from_: str = Field(..., alias="from")
     body: str
+    date: dt_date | None = None
 
     model_config = {"populate_by_name": True}
 

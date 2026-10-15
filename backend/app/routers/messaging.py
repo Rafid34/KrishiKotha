@@ -18,6 +18,7 @@ def sim_sms(payload: SimSmsRequest, db: Session = Depends(get_db)) -> SimSmsOut:
         from_number=payload.from_,
         body=payload.body,
         db=db,
+        as_of_date=payload.date,
         channel="sim",
     )
     return SimSmsOut(

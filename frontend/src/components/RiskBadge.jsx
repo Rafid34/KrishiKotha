@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LEVEL_META, levelLabel } from '../utils/risk.js';
 import { useLang, t } from '../i18n/index.jsx';
 
@@ -78,8 +78,9 @@ export default function RiskBadge({ level, score, lang: langProp }) {
 }
 
 /* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-const style = document.createElement('style');
-style.textContent = `
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
 .risk-badge {
   display: inline-flex;
   align-items: center;
@@ -95,8 +96,9 @@ style.textContent = `
   line-height: 1.4;
 }
 `;
-if (!document.getElementById('risk-badge-styles')) {
-  style.id = 'risk-badge-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('risk-badge-styles')) {
+    style.id = 'risk-badge-styles';
+    document.head.appendChild(style);
+  }
 }
 
