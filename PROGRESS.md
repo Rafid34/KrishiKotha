@@ -432,3 +432,8 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 - `backend/tests/conftest.py`: autouse fixture isolates `AUDIO_DIR`, `TTS_ENABLED`, `TWILIO_ENABLED` and `ADMIN_API_KEY` from the real `.env`. `test_api.py::test_advice_endpoint` now expects an `audio_url`.
 - Not done: `POST /api/admin/pipeline/run` (Section 7.2) is outside the Phase 11 task list. The shipped `ADMIN_API_KEY=change-me` default still authenticates, so set a real key before exposing the app.
 
+## Phase 12 details
+
+Last completed task: A1 (validation markers). Next task: A2 (getScoring client).
+
+

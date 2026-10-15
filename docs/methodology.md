@@ -85,3 +85,9 @@
 - **Admin key.** `X-Admin-Key` is compared in constant time with `ADMIN_API_KEY`; a missing, wrong or empty key is 401 for every `/api/admin/*` route. The shipped default `change-me` still works, so set a real key before exposing the app.
 - **Broadcast recipients.** A subscriber is a recipient when the advice rule chosen for their crop and growth stage is not `none_low` and its level is at or above `min_level`. This is the per-crop form of "district at or above a minimum level" because rules already use the district's scores. `dry_run` defaults to true; a real send goes through Twilio when enabled, otherwise through the in-memory simulator gateway (channel `sim`). `date` is an optional extra field to broadcast from a historical snapshot.
 - **Not built.** `POST /api/admin/pipeline/run` (Section 7.2) is not part of the Phase 11 task list and is not implemented.
+
+## Phase 12: validation results (measured)
+
+<!-- validation:begin -->
+<!-- validation:end -->
+
