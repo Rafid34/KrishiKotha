@@ -292,7 +292,16 @@ def test_ndvi_anomaly_used_when_current_and_baseline_exist(
         assert record.detail["sources"]["MODIS"]["composite_dates"]["satkhira"] == "2022-03-22"
 
 
-def test_ndvi_without_baseline_uses_level1_salinity_not_degraded(session_factory: sessionmaker[Session]) -> None:
+def test_ndvi_without_baseline_uses_level1_salinity_not_degraded(
+    session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_load = pipeline_module.load_baseline
+
+    def without_ndvi(district_id: str):  # the real files now carry ndvi_mean; strip it for this case
+        return {doy: {k: v for k, v in row.items() if k != "ndvi_mean"} for doy, row in real_load(district_id).items()}
+
+    monkeypatch.setattr(pipeline_module, "load_baseline", without_ndvi)
+
     def ndvi(districts: list[dict], end: date):
         return {d["id"]: 0.55 for d in districts}, "MOD13Q1.061", {d["id"]: "2022-06-10" for d in districts}
 
