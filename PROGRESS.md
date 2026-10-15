@@ -467,6 +467,6 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - **Not done:**
   - Phase 13 (deployment, packaging, final polish) not started.
 
+## Corrections
 
-
-
+- R-003: FIXED, `.\.venv\Scripts\python.exe scripts\check_contrast.py`

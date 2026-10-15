@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LEVEL_META, levelLabel } from '../utils/risk.js';
 import { LevelIcon } from './RiskBadge.jsx';
 import { useLang, t } from '../i18n/index.jsx';
@@ -16,7 +16,7 @@ export default function Legend() {
       {Object.entries(LEVEL_META).map(([level, meta]) => (
         <div key={level} className="legend__row">
           <LevelIcon level={level} size={14} />
-          <span style={{ color: meta.color, fontWeight: 600, fontSize: 'var(--text-xs)' }}>
+          <span style={{ color: meta.textColor ?? meta.color, fontWeight: 600, fontSize: 'var(--text-xs)' }}>
             {levelLabel(level, lang)}
           </span>
         </div>

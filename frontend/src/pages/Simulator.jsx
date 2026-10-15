@@ -705,7 +705,7 @@ if (style && !document.getElementById('simulator-page-styles')) {
 
 .quickfill-chip--salt .quickfill-chip__tag {
   background: #FEF3C7;
-  color: #B45309;
+  color: #92400E;
 }
 
 .quickfill-chip--drought .quickfill-chip__tag {

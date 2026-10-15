@@ -130,7 +130,7 @@ export default function RiskMap({
               radius={isSelected ? 20 : 16}
               pathOptions={{
                 fillColor: color,
-                color: isSelected ? 'var(--ink)' : '#fff',
+                color: isSelected ? 'var(--ink)' : (level === 'moderate' ? 'var(--ink)' : '#fff'),
                 weight: isSelected ? 3 : 2,
                 fillOpacity: 0.85,
                 opacity: 1,
@@ -152,7 +152,7 @@ export default function RiskMap({
                   <strong>{districtName}</strong>
                   <div className="map-tooltip__row">
                     <span>{hazardName}:</span>
-                    <span style={{ color, fontWeight: 700 }}>
+                    <span style={{ color: level === 'moderate' ? 'var(--risk-moderate-text)' : color, fontWeight: 700 }}>
                       {score != null ? Math.round(score) : 'â€”'}
                     </span>
                   </div>

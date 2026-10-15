@@ -8,18 +8,21 @@
 export const LEVEL_META = {
   low: {
     color: 'var(--risk-low)',
+    textColor: 'var(--risk-low)',
     label: 'Low',
     labelBn: 'কম',
     icon: 'circle',
   },
   moderate: {
     color: 'var(--risk-moderate)',
+    textColor: 'var(--risk-moderate-text)',
     label: 'Moderate',
     labelBn: 'মাঝারি',
     icon: 'triangle',
   },
   high: {
     color: 'var(--risk-high)',
+    textColor: 'var(--risk-high)',
     label: 'High',
     labelBn: 'বেশি',
     icon: 'square',
@@ -29,6 +32,11 @@ export const LEVEL_META = {
 /** Map a level string to its CSS colour token value */
 export function levelColor(level) {
   return (LEVEL_META[level] ?? LEVEL_META.low).color;
+}
+
+/** Map a level string to its WCAG AA compliant text colour token value */
+export function levelTextColor(level) {
+  return (LEVEL_META[level] ?? LEVEL_META.low).textColor ?? levelColor(level);
 }
 
 /** Map a level string to its English display label */

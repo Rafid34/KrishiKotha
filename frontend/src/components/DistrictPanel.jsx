@@ -134,7 +134,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
               type="button"
               key={h}
               className={`score-card score-card--${level} ${isSelected ? 'score-card--selected' : ''}`}
-              style={{ '--card-color': `var(--risk-${level})` }}
+              style={{ '--card-color': level === 'moderate' ? 'var(--risk-moderate-text)' : `var(--risk-${level})` }}
               onClick={() => setSelectedHazard(h)}
               aria-pressed={isSelected}
               aria-label={`${hazardLabel(h, lang)}: ${score ?? 'unavailable'}, ${level}`}

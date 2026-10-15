@@ -279,7 +279,7 @@ export default function EventReplay() {
                 strokeWidth={1}
                 label={{
                   value: lang === 'bn' ? 'মাঝারি (৪০)' : 'Moderate (40)',
-                  fill: '#E0A100',
+                  fill: '#8F6600',
                   fontSize: 10,
                   position: 'insideBottomLeft',
                 }}
@@ -309,7 +309,7 @@ export default function EventReplay() {
                   strokeDasharray="3 3"
                   label={{
                     value: lang === 'bn' ? 'প্রথম মাঝারি' : 'First Moderate',
-                    fill: '#E0A100',
+                    fill: '#8F6600',
                     fontSize: 10,
                     position: 'top',
                   }}

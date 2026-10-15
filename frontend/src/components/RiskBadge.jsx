@@ -7,8 +7,8 @@ import { useLang, t } from '../i18n/index.jsx';
  * Circle = low, Triangle = moderate, Square = high.
  * Always accompanies the colour so colourblind users are not excluded.
  */
-export function LevelIcon({ level, size = 16, ...props }) {
-  const color = LEVEL_META[level]?.color ?? 'var(--risk-low)';
+export function LevelIcon({ level, size = 16, color: colorProp, ...props }) {
+  const color = colorProp ?? LEVEL_META[level]?.color ?? 'var(--risk-low)';
   const icon = LEVEL_META[level]?.icon ?? 'circle';
 
   if (icon === 'triangle') {
@@ -21,7 +21,7 @@ export function LevelIcon({ level, size = 16, ...props }) {
         focusable="false"
         {...props}
       >
-        <polygon points="8,2 15,14 1,14" fill={color} />
+        <polygon points="8,2 15,14 1,14" fill={color} stroke="var(--ink)" strokeWidth={1} />
       </svg>
     );
   }
@@ -55,8 +55,8 @@ export function LevelIcon({ level, size = 16, ...props }) {
 }
 
 /**
- * RiskBadge â€” coloured chip showing the risk level with icon + text.
- * Spec Â§8.4: "Risk levels are always shown with text and an icon shape
+ * RiskBadge — coloured chip showing the risk level with icon + text.
+ * Spec §8.4: "Risk levels are always shown with text and an icon shape
  * (circle, triangle, square), never colour alone."
  */
 export default function RiskBadge({ level, score, lang: langProp }) {
@@ -64,20 +64,24 @@ export default function RiskBadge({ level, score, lang: langProp }) {
   const lang = langProp ?? ctxLang;
   const meta = LEVEL_META[level] ?? LEVEL_META.low;
   const label = levelLabel(level, lang);
+  const isModerate = level === 'moderate';
 
   return (
     <span
       className={`risk-badge risk-badge--${level}`}
-      style={{ '--badge-color': meta.color }}
+      style={{
+        '--badge-color': meta.color,
+        '--badge-text-color': meta.textColor ?? meta.color,
+      }}
       title={`${label}${score != null ? ` (${Math.round(score)})` : ''}`}
     >
-      <LevelIcon level={level} size={14} />
+      <LevelIcon level={level} size={14} color={isModerate ? 'var(--ink)' : meta.color} />
       <span className="risk-badge__text">{label}</span>
     </span>
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Styles ────────────────────────────────────────────────────────── */
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = `
@@ -91,9 +95,15 @@ if (typeof document !== 'undefined') {
   border: 1.5px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--badge-color);
+  color: var(--badge-text-color, var(--badge-color));
   white-space: nowrap;
   line-height: 1.4;
+}
+
+.risk-badge--moderate {
+  background: var(--risk-moderate);
+  border: 1.5px solid var(--risk-moderate);
+  color: var(--ink);
 }
 `;
   if (!document.getElementById('risk-badge-styles')) {
