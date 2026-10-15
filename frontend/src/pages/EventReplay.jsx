@@ -115,6 +115,9 @@ export default function EventReplay() {
     return (
       <div className="replay-page replay-page--loading" role="status">
         <p>{t('loading', lang)}</p>
+        <p className="replay-disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
+          {t('disclaimer', lang)}
+        </p>
       </div>
     );
   }
@@ -124,6 +127,9 @@ export default function EventReplay() {
       <div className="replay-page replay-page--error" role="alert">
         <h2>{t('error', lang)}</h2>
         <p>{error}</p>
+        <p className="replay-disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
+          {t('disclaimer', lang)}
+        </p>
       </div>
     );
   }

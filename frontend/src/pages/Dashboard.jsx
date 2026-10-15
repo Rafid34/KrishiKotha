@@ -92,6 +92,11 @@ export default function Dashboard() {
 
           {/* Data freshness strip */}
           {sources && <DataFreshness sources={sources} />}
+
+          {/* Mandatory advisory disclaimer shown at all times */}
+          <p className="dashboard__disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
+            {t('disclaimer', lang)}
+          </p>
         </div>
       </div>
 
@@ -167,6 +172,12 @@ style.textContent = `
   font-size: var(--text-xl);
   color: var(--brand);
   font-weight: 700;
+}
+.dashboard__disclaimer {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.4;
 }
 .dashboard__control-row {
   display: flex;
