@@ -53,11 +53,11 @@
 - Derivation of the five replay step dates from data (Section 9 task 8.4):
   - Step 1 ("Rain begins"): first day rainfall exceeds the 50th baseline percentile of the 3-day sum (`rain3_pctl > 50`) -> `2022-05-15`.
   - Step 2 ("Rain builds"): first day `f_rain7` is at least 60 (`rain7_pctl >= 60`) on or after Step 1 -> `2022-05-15`.
-  - Step 3 ("Heavy rain"): first day flood level is Moderate (`flood_level == "moderate"`, score 40–69.99) on or after Step 2 -> `2022-05-25`.
-  - Step 4 ("Extreme rain"): first day flood level is High (`flood_level == "high"`, score >= 70) on or after Step 3 -> `2022-06-02`.
+  - Step 3 ("Heavy rain"): first day flood level is Moderate or High (`flood_level in ('moderate', 'high')`, score >= 40) on or after Step 2 -> `2022-05-15` (reconciled in Phase 12 from earlier `2022-05-25`).
+  - Step 4 ("Extreme rain"): first day flood level is High (`flood_level == "high"`, score >= 70) on or after Step 3 -> `2022-05-15` (reconciled in Phase 12 from earlier `2022-06-02`).
   - Step 5 ("Flood"): reference onset date -> `2022-06-16`.
-- First Moderate and High milestone dates: `first_moderate = 2022-05-25`, `first_high = 2022-06-02`.
-- Measured lead time: 14 days (`2022-06-16` minus `2022-06-02`), exceeding the 3-day target without threshold tuning.
+- First Moderate and High milestone dates: `first_moderate = 2022-05-15`, `first_high = 2022-05-15` (reconciled in Phase 12).
+- Measured lead time: 32 days (`2022-06-16` minus `2022-05-15`), exceeding the 3-day target without threshold tuning.
 - Fixed thresholds: As required by Sections 8.4, 9, 10.4 and 13, all thresholds (<40 Low, 40-69.99 Moderate, >=70 High; weights 0.40/0.35/0.25) were fixed in advance and were not tuned to fit the Sylhet 2022 event.
 
 
@@ -85,6 +85,13 @@
 - **Admin key.** `X-Admin-Key` is compared in constant time with `ADMIN_API_KEY`; a missing, wrong or empty key is 401 for every `/api/admin/*` route. The shipped default `change-me` still works, so set a real key before exposing the app.
 - **Broadcast recipients.** A subscriber is a recipient when the advice rule chosen for their crop and growth stage is not `none_low` and its level is at or above `min_level`. This is the per-crop form of "district at or above a minimum level" because rules already use the district's scores. `dry_run` defaults to true; a real send goes through Twilio when enabled, otherwise through the in-memory simulator gateway (channel `sim`). `date` is an optional extra field to broadcast from a historical snapshot.
 - **Not built.** `POST /api/admin/pipeline/run` (Section 7.2) is not part of the Phase 11 task list and is not implemented.
+
+## Phase 12 decisions
+
+- **Reconciled backtest step 3 logic (milestone sequencing):**
+  - **Before:** `backend/app/services/backtest.py` accepted only the exact flood level `"moderate"` (`flood_level == "moderate"`) for Step 3 ("Heavy rain"). Because the Sylhet 2022 series started at High (`score = 91.32 >= 70`) on the very first day of the scored window (`2022-05-15`), requiring exact Moderate skipped ahead to the first day the series dropped back into Moderate (`2022-05-25`), which delayed Step 4 ("Extreme rain", first High on or after Step 3) until `2022-06-02`. This resulted in `first_moderate = 2022-05-25`, `first_high = 2022-06-02`, and lead time `14` days.
+  - **After:** Step 3 is reconciled to "first day level is moderate or high" (`flood_level in ("moderate", "high")`, score >= 40), while Step 4 stays "first High on or after Step 3". For Sylhet 2022, this derives `first_moderate = 2022-05-15`, `first_high = 2022-05-15`, and lead time `32` days (`2022-06-16` minus `2022-05-15`), reconciling `/api/backtest/sylhet-2022` with the validation report (Block A).
+  - This is a sequencing logic fix, not tuning: no scoring weights (0.40/0.35/0.25), risk thresholds (<40, 40-70, >=70), baselines, or formulas were altered.
 
 ## Phase 12: validation results (measured)
 

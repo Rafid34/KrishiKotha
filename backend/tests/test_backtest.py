@@ -63,6 +63,21 @@ def test_synthetic_series_known_dates():
     assert steps[4] == {"step": 5, "label": "Flood", "label_bn": "বন্যা", "date": "2022-06-16"}
 
 
+def test_series_starting_at_high_or_skipping_moderate():
+    """If a series reaches High directly without an exact Moderate day, step 3 accepts Moderate or High."""
+    series = [
+        _make_point("2022-06-01", flood_score=20.0, flood_level="low", r3_pctl=25.0, r7_pctl=20.0),
+        _make_point("2022-06-03", flood_score=30.0, flood_level="low", r3_pctl=55.0, r7_pctl=35.0),
+        _make_point("2022-06-05", flood_score=35.0, flood_level="low", r3_pctl=70.0, r7_pctl=65.0),
+        _make_point("2022-06-08", flood_score=85.0, flood_level="high", r3_pctl=90.0, r7_pctl=85.0),
+        _make_point("2022-06-16", flood_score=98.0, flood_level="high", r3_pctl=99.0, r7_pctl=98.0),
+    ]
+    res = compute_backtest(series, reference_onset="2022-06-16")
+    assert res["first_moderate"] == "2022-06-08"
+    assert res["first_high"] == "2022-06-08"
+    assert res["lead_time_days"] == 8
+
+
 def test_lead_time_calculation_variations():
     """Verify lead time calculation responds accurately to varying onset or milestone dates."""
     # 3-day lead time case (matching the spec pitch slide illustrative target)

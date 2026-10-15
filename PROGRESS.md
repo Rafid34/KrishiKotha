@@ -434,7 +434,7 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: A4 (Method page rewrite, formatting utils, 58 vitest tests pass, npm run build ok). Next task: Stage B (pending data readiness).
+Last completed task: B1 (reconciled backtest step 3 logic to Moderate or High; updated test_backtest.py, replay.test.js, EventReplay.jsx, docs/methodology.md; lead time 32 days). Next task: B2 (write validation report to docs/methodology.md).
 
 
 

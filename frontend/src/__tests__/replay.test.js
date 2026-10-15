@@ -10,8 +10,8 @@ describe('Replay client & step structure', () => {
     const steps = [
       { step: 1, label: 'Rain begins', date: '2022-05-15' },
       { step: 2, label: 'Rain builds', date: '2022-05-15' },
-      { step: 3, label: 'Heavy rain', date: '2022-05-25' },
-      { step: 4, label: 'Extreme rain', date: '2022-06-02' },
+      { step: 3, label: 'Heavy rain', date: '2022-05-15' },
+      { step: 4, label: 'Extreme rain', date: '2022-05-15' },
       { step: 5, label: 'Flood', date: '2022-06-16' },
     ];
 
@@ -23,11 +23,11 @@ describe('Replay client & step structure', () => {
   });
 
   it('verifies lead time equals reference onset minus first high date', () => {
-    const firstHigh = '2022-06-02';
+    const firstHigh = '2022-05-15';
     const referenceOnset = '2022-06-16';
     const d1 = new Date(firstHigh);
     const d2 = new Date(referenceOnset);
     const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-    expect(diffDays).toBe(14);
+    expect(diffDays).toBe(32);
   });
 });

@@ -91,7 +91,7 @@ def compute_backtest(
     Rules from Task 8.4:
     - step 1: first day rainfall exceeds the 50th baseline percentile of the 3-day sum (rain3_pctl > 50)
     - step 2: first day f_rain7 is at least 60 (rain7_pctl >= 60)
-    - step 3: first day flood level is Moderate (flood_level == 'moderate')
+    - step 3: first day flood level is Moderate or High (flood_level in ('moderate', 'high'))
     - step 4: first day flood level is High (flood_level == 'high')
     - step 5: reference onset date
     """
@@ -122,11 +122,11 @@ def compute_backtest(
             step2_date = p["date"]
             break
 
-    # Step 3: first day flood level is Moderate (on or after Step 2)
+    # Step 3: first day flood level is Moderate or High (on or after Step 2)
     for p in parsed:
         if step2_date is not None and p["date"] < step2_date:
             continue
-        if p["flood_level"] == "moderate":
+        if p["flood_level"] in ("moderate", "high"):
             step3_date = p["date"]
             break
 

@@ -75,7 +75,7 @@ export default function EventReplay() {
 
   const series = data?.series || [];
   const steps = data?.steps || [];
-  const leadTimeDays = data?.lead_time_days ?? 14;
+  const leadTimeDays = data?.lead_time_days ?? 32;
   const currentPoint = series[currentDateIndex] || null;
   const currentDate = currentPoint?.date || '';
 
