@@ -210,6 +210,22 @@ def test_sources_shape_and_last_dates(client: TestClient, loaded: sessionmaker[S
     assert by_name["MOD13Q1"]["version"] == "061" and by_name["MOD13Q1"]["last_data_date"] is None
 
 
+def test_sources_list_every_dataset_including_gibs(client: TestClient, loaded: sessionmaker[Session]) -> None:
+    names = [s["short_name"] for s in client.get("/api/sources").json()]
+    assert names == ["POWER_DAILY", "GPM_3IMERGDL", "GPM_3IMERGDF", "SPL4SMGP", "MOD13Q1", "GIBS"]
+    gibs = next(s for s in client.get("/api/sources").json() if s["short_name"] == "GIBS")
+    assert gibs["last_data_date"] is None
+
+
+def test_scoring_route_echoes_engine_constants(client: TestClient) -> None:
+    from backend.app.services.risk.scoring import SCORING_CONSTANTS
+
+    resp = client.get("/api/scoring")
+    assert resp.status_code == 200
+    assert resp.json() == {"constants": SCORING_CONSTANTS}
+    assert resp.json()["constants"]["thresholds"] == {"moderate": 40.0, "high": 70.0}
+
+
 def test_sources_report_smap_and_modis_last_dates(client: TestClient, loaded: sessionmaker[Session]) -> None:
     with loaded() as db:
         db.add(Observation(district_id="sylhet", date=date(2022, 6, 15), source="SMAP_L4", variable="rz_pctl", value=97.0, product_version="008"))

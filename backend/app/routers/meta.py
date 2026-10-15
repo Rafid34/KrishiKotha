@@ -10,6 +10,7 @@ from ..db import get_db
 from ..errors import not_found
 from ..models import Observation, PipelineRun
 from ..schemas import HealthOut, PipelineStatusOut, SourceOut
+from ..services.risk.scoring import SCORING_CONSTANTS
 from ..timeutil import iso_utc
 
 router = APIRouter(prefix="/api", tags=["meta"])
@@ -61,6 +62,15 @@ DATASETS: tuple[dict[str, str], ...] = (
         "url": "https://appeears.earthdatacloud.nasa.gov/",
         "observation_source": "MODIS_MOD13Q1",
     },
+    {
+        "name": "NASA GIBS imagery layers (IMERG precipitation rate, MODIS NDVI), map overlay only",
+        "short_name": "GIBS",
+        "version": "WMTS, no product version",
+        "resolution": "GoogleMapsCompatible tile matrix sets, levels 6 and 9, daily or 16-day imagery",
+        "latency": "imagery for a date can be missing; the map then says so",
+        "url": "https://nasa-gibs.github.io/gibs-api-docs/",
+        "observation_source": "GIBS",
+    },
 )
 
 
@@ -87,6 +97,16 @@ def sources(db: Session = Depends(get_db)) -> list[dict[str, str | None]]:
         entry["last_data_date"] = last.isoformat() if last else None
         out.append(entry)
     return out
+
+
+@router.get("/scoring")
+def scoring() -> dict[str, object]:
+    """Scoring weights and thresholds (Section 7.6), read from the code that computes the scores.
+
+    Kept apart from `/api/sources` so that route stays a plain list of datasets (Section 7.2);
+    the Method page reads both, so the formulas it shows always match the engine.
+    """
+    return {"constants": SCORING_CONSTANTS}
 
 
 @router.get("/pipeline/status", response_model=PipelineStatusOut)
