@@ -434,7 +434,7 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: B3 (wrote definitions, reference citation, plain-words results, and limitations in docs/methodology.md). Next task: B4 (provenance check for Sylhet 2022-06-16 inputs tracing to NASA files/requests, and note gaps in methodology.md).
+Last completed task: B4 (provenance check completed for Sylhet 2022-06-16, tracing inputs to IMERG granule/file, POWER request URL, and SMAP granule/cache; documented schema gaps in methodology.md). Next task: B5 (update docs/data_sources.md with Phase 12 dataset table, cross-product result, and NDVI limitation).
 
 
 

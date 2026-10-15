@@ -240,4 +240,28 @@ Days scored per district: 365 (of 365).
 - **Winter flood artifacts:** During dry winter months (January–February and December), several districts show elevated flood scores (means between 65 and 84) because the baseline percentiles and soil wetness terms yield high risk scores despite low absolute rainfall.
 - **False alarm definition and counts:** Under our chosen false-alarm definition (High days after 2022-06-30 up to 2022-09-30), Run B had 9 false alarm days. Because the specification does not define the official duration of the 2022 flood season, post-June rain events in Sylhet are counted as false alarms here, though they may represent actual subsequent flood pulses.
 
+### Provenance check (Sylhet 2022-06-16)
+
+Traced from `/api/risk/sylhet/explain?date=2022-06-16` to NASA files and upstream requests:
+
+| Hazard & Input | Reported value / raw | Reported source | Upstream NASA file / request | Trace level |
+|---|---|---|---|---|
+| Flood `rain3_pctl` | 99.19% (286.68 mm) | GPM IMERG Final Run V07 | `data/cache/imerg/final_20220616.nc`, `final_20220615.nc`, `final_20220614.nc` (GES DISC granules `3B-DAY.MS.MRG.3IMERG.20220616-S000000-E235959.V07B.nc4` etc.) | File & Granule |
+| Flood `rain7_pctl` | 96.61% (391.41 mm) | GPM IMERG Final Run V07 | `data/cache/imerg/final_20220610.nc` through `final_20220616.nc` (GES DISC granules `3B-DAY.MS.MRG.3IMERG.202206{10-16}-S000000-E235959.V07B.nc4`) | File & Granule |
+| Flood `soil_pctl` | 98.49% (raw 1.0) | SMAP L4 Global 9 km Root Zone Soil Moisture | SPL4SMGP v008 granule for 2022-06-16 (`SMAP_L4_SM_gph_20220616T060000_Vv8011_001.h5` via Earthdata CMR search), cached in `data/cache/smap/20220616.json` | Extracted cache & CMR query |
+| Drought `soil_pctl` | 1.51% (raw 98.49%) | SMAP L4 Global 9 km Root Zone Soil Moisture | Same SPL4SMGP v008 granule for 2022-06-16 and `data/cache/smap/20220616.json` | Extracted cache & CMR query |
+| Drought `rain_deficit` | 0.0% (raw 0.0 mm) | GPM IMERG Final Run V07 | 30-day sum (`final_20220518.nc` to `final_20220616.nc`) | File & Granule |
+| Drought `heat_anomaly` | 0.0% (raw -1.5957 °C) | NASA POWER T2M_MAX | NASA POWER Daily Point API (`https://power.larc.nasa.gov/api/temporal/daily/point?parameters=GWETROOT,T2M_MAX&community=AG&longitude=91.8687&latitude=24.8949&start=20220508&end=20220630&format=JSON`) | Request URL template |
+| Salinity `seasonal_intrusion` | 60.0% (raw 6) | Calendar assumption (non-NASA) | Hard-coded month lookup (Section 7.6) | Static rule |
+| Salinity `rain_deficit` | 0.0% (raw 0.0 mm) | GPM IMERG Final Run V07 | Same 30-day IMERG sum as drought | File & Granule |
+| Salinity `coastal_factor` | 0.0 (raw 250.0 km) | Static configuration (non-NASA) | Static district centroid distance to coast (`districts.json`) | Static config |
+| Salinity `ndvi` | `used: false` | None (Level 1 formula fallback) | AppEEARS task was pending/unreachable; Level 1 formula used without NDVI | Documented fallback |
+
+#### Provenance gaps and limitations
+
+1. **Snapshot schema details:** Stored database snapshots (`RiskSnapshot.inputs`) and the `/api/risk/{id}/explain` response record only the high-level product name (e.g. `"GPM IMERG Final Run V07"`, `"SMAP L4 Global 9 km Root Zone Soil Moisture (sm_rootzone_pctl)"`, `"NASA POWER T2M_MAX"`), date, and parameter values. They do not store the exact upstream NASA granule filename, download URL, or cryptographic checksum (SHA-256) per input row.
+2. **SMAP raw granule ephemeral lifecycle:** To prevent excessive local disk consumption, raw SPL4SMGP HDF5 granules are downloaded, sampled at district centroids into `data/cache/smap/{YYYYMMDD}.json`, and then immediately deleted. The exact granule identifier (`SMAP_L4_SM_gph_20220616T060000_Vv8011_001.h5`) is therefore traceable via Earthdata CMR query parameters (product `SPL4SMGP`, version `008`, temporal window `04:30–07:30 UTC`), but the raw granule is not preserved on disk.
+3. **POWER request logging:** `PipelineRun.detail.sources.POWER.request_example` records a single illustrative parameter dictionary (for Barishal centroid) rather than persisting every per-district HTTP request string individually.
+
+
 
