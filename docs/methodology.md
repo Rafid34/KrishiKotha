@@ -96,5 +96,108 @@
 ## Phase 12: validation results (measured)
 
 <!-- validation:begin -->
+### 1. Event backtest (Sylhet, June 2022)
+
+**A. Pipeline as shipped (SMAP L4 soil input where available, POWER otherwise), 2022-05-15 to 2022-06-30**
+
+Source: application database, 47 Sylhet days scored. This run ends on 2022-06-30, so it cannot count High days after that date; the false alarm row for this run is therefore 0 by construction and is not a measurement.
+
+| Measure | Value |
+|---|---|
+| Date of first Moderate-or-higher flood level | 2022-05-15 |
+| Date of first High flood level | 2022-05-15 |
+| Reference onset date | 2022-06-16 |
+| Lead time (onset minus first High), days | 32 (target of at least 3 days MET) |
+| High days before the onset | 22 |
+| High days from the onset to 2022-06-30 | 11 |
+| High-level false alarm days, 2022-07-01 to 2022-09-30 | 0 |
+| Days scored from 2022-05-15 to 2022-09-30 | 47 |
+
+High days before the onset: 2022-05-15, 2022-05-16, 2022-05-17, 2022-05-18, 2022-05-19, 2022-05-20, 2022-05-21, 2022-05-22, 2022-05-23, 2022-05-24, 2022-06-02, 2022-06-03, 2022-06-04, 2022-06-05, 2022-06-06, 2022-06-07, 2022-06-08, 2022-06-09, 2022-06-10, 2022-06-13, 2022-06-14, 2022-06-15.
+
+High days after 2022-06-30: none.
+
+**B. IMERG Final Run and POWER only (no SMAP, no NDVI), 2022-05-15 to 2022-09-30**
+
+Source: validation database, 139 Sylhet days scored (the same run as the seasonality table).
+
+| Measure | Value |
+|---|---|
+| Date of first Moderate-or-higher flood level | 2022-05-15 |
+| Date of first High flood level | 2022-05-15 |
+| Reference onset date | 2022-06-16 |
+| Lead time (onset minus first High), days | 32 (target of at least 3 days MET) |
+| High days before the onset | 22 |
+| High days from the onset to 2022-06-30 | 10 |
+| High-level false alarm days, 2022-07-01 to 2022-09-30 | 9 |
+| Days scored from 2022-05-15 to 2022-09-30 | 139 |
+
+High days before the onset: 2022-05-15, 2022-05-16, 2022-05-17, 2022-05-18, 2022-05-19, 2022-05-20, 2022-05-21, 2022-05-22, 2022-05-23, 2022-05-24, 2022-06-02, 2022-06-03, 2022-06-04, 2022-06-05, 2022-06-06, 2022-06-07, 2022-06-08, 2022-06-09, 2022-06-10, 2022-06-13, 2022-06-14, 2022-06-15.
+
+High days after 2022-06-30: 2022-07-01, 2022-09-03, 2022-09-04, 2022-09-05, 2022-09-06, 2022-09-07, 2022-09-15, 2022-09-16, 2022-09-17.
+
+### 2. Cross-product consistency, 2022-06-01 to 2022-06-30
+
+IMERG Final Run daily district-box mean (from run B) against POWER `PRECTOTCORR` at the district centroid (mm/day).
+
+| District | Days | Pearson r | Mean absolute difference (mm/day) | Mean IMERG minus POWER (mm/day) | IMERG total (mm) | POWER total (mm) |
+|---|---|---|---|---|---|---|
+| Sylhet | 30 | 0.652 | 22.94 | -6.73 | 1352.0 | 1554.0 |
+| Rajshahi | 30 | 0.555 | 4.65 | -1.00 | 126.6 | 156.5 |
+
+### 3. Seasonality checks, 2022-01-01 to 2022-12-31 (all districts)
+
+| Check | Result | Numbers |
+|---|---|---|
+| Flood score for Sylhet peaks between June and September | PASS | peak month by monthly mean = Jun (78.7) |
+| Flood score for Sunamganj peaks between June and September | PASS | peak month by monthly mean = Jun (83.5) |
+| Drought score for Rajshahi is higher in March and April than in July | FAIL | monthly means: Mar 26.1, Apr 64.5, Jul 76.4 |
+| Salinity score for Satkhira is higher in March to May than in August | PASS | monthly means: Mar 79.4, Apr 92.0, May 52.2, Aug 28.2 |
+| Salinity score for Khulna is higher in March to May than in August | PASS | monthly means: Mar 64.2, Apr 68.9, May 39.0, Aug 17.5 |
+| Salinity score for Rajshahi stays below 20 in every month | PASS | highest daily score in any month = 0.0 (Jan) |
+
+Monthly mean of the daily score (0 to 100):
+
+**Flood**
+
+| District | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Barishal | 75.9 | 66.9 | 47.6 | 31.1 | 57.6 | 45.9 | 28.7 | 44.5 | 45.7 | 58.4 | 56.7 | 67.4 |
+| Chattogram | 76.7 | 70.9 | 43.7 | 40.4 | 64.1 | 54.8 | 36.6 | 36.1 | 63.6 | 60.8 | 59.3 | 65.5 |
+| Khulna | 83.0 | 73.1 | 49.1 | 28.8 | 64.7 | 39.4 | 25.7 | 44.2 | 48.0 | 58.7 | 59.5 | 69.5 |
+| Rajshahi | 78.5 | 75.3 | 48.0 | 34.7 | 63.6 | 40.4 | 21.4 | 36.9 | 54.1 | 50.2 | 46.3 | 52.8 |
+| Rangpur | 78.2 | 73.6 | 47.3 | 78.1 | 62.5 | 74.9 | 36.3 | 44.1 | 50.2 | 51.1 | 38.2 | 55.7 |
+| Satkhira | 83.8 | 73.1 | 42.9 | 23.2 | 66.1 | 31.9 | 21.4 | 41.9 | 45.2 | 56.8 | 58.1 | 65.3 |
+| Sunamganj | 74.6 | 68.4 | 42.0 | 74.9 | 73.8 | 83.5 | 52.6 | 35.8 | 68.8 | 73.0 | 64.1 | 65.0 |
+| Sylhet | 73.3 | 68.5 | 38.0 | 65.2 | 70.4 | 78.7 | 47.5 | 30.2 | 63.4 | 66.0 | 43.3 | 50.3 |
+
+**Drought**
+
+| District | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Barishal | 24.8 | 3.9 | 37.4 | 62.7 | 23.1 | 34.4 | 53.4 | 46.6 | 31.9 | 20.3 | 23.6 | 48.0 |
+| Chattogram | 32.7 | 7.1 | 43.6 | 55.8 | 23.0 | 17.5 | 43.2 | 57.1 | 29.6 | 20.6 | 41.2 | 55.3 |
+| Khulna | 7.8 | 0.8 | 36.3 | 70.7 | 17.9 | 36.4 | 60.3 | 52.7 | 29.9 | 23.3 | 22.4 | 50.5 |
+| Rajshahi | 5.5 | 2.2 | 26.1 | 64.5 | 13.2 | 34.9 | 76.4 | 51.2 | 30.1 | 36.7 | 52.6 | 62.3 |
+| Rangpur | 8.5 | 0.5 | 23.8 | 7.7 | 5.9 | 3.2 | 35.8 | 39.9 | 26.7 | 41.2 | 40.4 | 57.9 |
+| Satkhira | 8.6 | 1.3 | 40.4 | 82.5 | 18.9 | 47.7 | 67.7 | 55.5 | 32.3 | 24.3 | 25.5 | 54.0 |
+| Sunamganj | 17.6 | 6.8 | 47.8 | 8.5 | 4.8 | 4.0 | 23.7 | 45.7 | 16.0 | 13.8 | 21.5 | 48.3 |
+| Sylhet | 22.6 | 6.8 | 46.5 | 17.1 | 4.7 | 4.0 | 25.3 | 51.1 | 18.0 | 15.0 | 24.4 | 47.7 |
+
+**Salinity**
+
+| District | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Barishal | 23.1 | 21.5 | 55.9 | 61.4 | 38.5 | 32.9 | 24.7 | 21.5 | 12.7 | 12.0 | 14.2 | 34.5 |
+| Chattogram | 44.9 | 37.0 | 95.2 | 95.3 | 59.5 | 38.6 | 28.1 | 39.2 | 21.9 | 15.7 | 38.9 | 56.0 |
+| Khulna | 12.2 | 22.9 | 64.2 | 68.9 | 39.0 | 34.1 | 24.3 | 17.5 | 10.1 | 13.5 | 15.9 | 38.8 |
+| Rajshahi | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Rangpur | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Satkhira | 17.0 | 30.5 | 79.4 | 92.0 | 52.2 | 51.7 | 38.2 | 28.2 | 16.7 | 21.1 | 22.7 | 51.7 |
+| Sunamganj | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Sylhet | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+
+Days scored per district: 365 (of 365).
+
 <!-- validation:end -->
 
