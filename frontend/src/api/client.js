@@ -78,6 +78,12 @@ export function getPipelineStatus() {
   return get('/pipeline/status');
 }
 
+/** GET /api/scoring → scoring constants and thresholds */
+export function getScoring() {
+  return get('/scoring');
+}
+
+
 // ── Advice / messaging ───────────────────────────────────────────────────────
 
 /**

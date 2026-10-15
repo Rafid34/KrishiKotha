@@ -434,6 +434,6 @@ Last completed task: 11.5. Next task: Phase 12 (not started).
 
 ## Phase 12 details
 
-Last completed task: A1 (validation markers). Next task: A2 (getScoring client).
+Last completed task: A2 (getScoring client). Next task: A3 (Method page rewrite).
 
 
