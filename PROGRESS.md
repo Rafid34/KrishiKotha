@@ -9,6 +9,7 @@
 | 4: Risk scoring engine | Done | Verified: 15 tests pass (76 assertions); all Section 7.6 formulas implemented exactly as written with named constants and level thresholds (<40 low, 40-69.99 moderate, >=70 high); degraded flag handles missing soil input. |
 | 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. Spec Section 7.2 `date` param on `GET /api/risk/{district_id}` implemented: 62 tests pass. |
 | 6: Advice engine, parser, SMS simulator API | Done | Verified: 140 tests pass (33 in `test_advice.py`, 38 in `test_parser.py`, 16 in `test_api.py`); verbatim Bangla templates from Section 7.4; 134-character limit enforced with `MessageLengthExceededError`; `POST /api/sim/sms` returns Bangla replies (welcome + advice) and logs 2 messages; observed conditions only, no forecasts. |
+| 7: Frontend scaffold and risk map dashboard | Done | Verified: 22 vitest tests pass; `npm run build` succeeds; map renders 8 district markers with OpenStreetMap tiles; date 2022-06-16 with flood hazard shows Sylhet High (score 98.01, red marker); RiskBadge and Legend follow Section 8.4 (icon shape + colour + text label); fonts self-hosted (@fontsource Inter & Noto Sans Bengali); 360 px mobile width verified with zero horizontal overflow. |
 
 ## Spec patch (2026-10-15)
 
@@ -240,4 +241,42 @@ Implemented Phase 6: Advice engine, parser, and SMS simulator API (Sections 7.4,
   - Reply 1: `কৃষি কথায় স্বাগতম। আপনার এলাকা ও ফসল নথিভুক্ত হয়েছে। আমরা সতর্কবার্তা পাঠাব।`
   - Reply 2: `মাটির আর্দ্রতা কমছে। সম্ভব হলে ভোরে বা সন্ধ্যায় হালকা সেচ দিন।`
   - `subscriber_id`: 1
+
+## Phase 7 details
+
+Implemented Phase 7: Frontend scaffold and risk map dashboard (Sections 8, 9).
+
+### Implemented components
+- **Configuration & Setup**:
+  - `frontend/vite.config.js`: configured `envDir: '..'`, proxy `/api` to `http://localhost:8000`, and Vitest configuration.
+  - `frontend/src/styles/tokens.css`: design tokens from Section 8.4 (`--bg`, `--surface`, `--ink`, `--ink-muted`, `--brand`, `--brand-dark`, `--risk-low`, `--risk-moderate`, `--risk-high`, `--nasa-blue`, spacing scale, radius, typography).
+  - `frontend/src/styles/global.css`: CSS reset, focus visible rings (`3px solid var(--brand)`), `prefers-reduced-motion` handling, card styles, and Leaflet z-index management.
+- **Typography & Self-hosted Fonts**:
+  - Self-hosted Inter (400, 500, 600, 700) and Noto Sans Bengali (400, 500, 700) via `@fontsource` packages imported in `main.jsx`.
+  - Scoped `[lang="bn"]` font rule ensuring Bengali characters render with Noto Sans Bengali.
+- **i18n Localization**:
+  - `src/i18n/en.json` & `src/i18n/bn.json`: translation keys for navigation, dashboard titles, hazards, risk levels, and disclaimers.
+  - `src/i18n/index.jsx`: `LangProvider`, `useLang` hook, and `t()` translator with English fallback, persisted in React memory state.
+- **API Client**:
+  - `src/api/client.js`: fetch wrapper normalizing backend responses and errors for districts, crops, risk snapshots, time series, explain factors, and SMS simulation.
+- **UI Components & Accessibility (§8.4)**:
+  - `src/components/Layout.jsx`: persistent shell with brand header, responsive navigation links (Dashboard, Replay, Simulator, Method), and language switcher (`বাংলা` / `EN`).
+  - `src/components/RiskBadge.jsx` & `LevelIcon`: SVG icon shapes (circle for low, triangle for moderate, square for high) accompanied by text labels and colors, strictly adhering to Section 8.4 accessibility rule that risk levels must never rely on colour alone.
+  - `src/components/Legend.jsx`: map legend rendering the three risk levels with their corresponding SVG shapes, colors, and localized text. Placed as a Leaflet custom control via React portal.
+  - `src/components/HazardToggle.jsx`: native radio inputs in a styled pill container with keyboard navigation and visible focus rings.
+  - `src/components/DataFreshness.jsx`: data freshness strip displaying latest observation dates for IMERG rainfall, POWER soil wetness, and T2M_MAX temperature.
+  - `src/components/DistrictPanel.jsx`: district names (both languages), three score cards with `RiskBadge`, date, and mandatory "Based on NASA satellite data. Not an official government warning." disclaimer. Includes mobile media queries ensuring comfortable fit at <=360px.
+  - `src/components/RiskMap.jsx`: Leaflet map with OpenStreetMap tiles, centered on Bangladesh, with 8 circle markers sized and coloured by the selected hazard level, aria-labels (`Sylhet, flood risk high, score 98`), interactive tooltips, and district selection handler.
+  - `src/pages/Dashboard.jsx`: 65/35 desktop layout (>=1024px), stacked mobile layout (<1024px), default demo date `2022-06-16`, hazard toggle, date picker, map, and district detail panel.
+- **Utilities & Unit Tests**:
+  - `src/utils/risk.js` & `src/utils/format.js`: scoring thresholds, level metadata, hazard labels, score-to-level mapping, and locale-aware number/date formatting.
+  - `src/__tests__/risk.test.js`: 22 Vitest tests covering LEVEL_META, levelColor, levelLabel, levelIcon, scoreToLevel thresholds (39.99/40/69.99/70), and hazardLabel.
+
+### Verification
+- `npm test`: 22 passed in 245ms.
+- `npm run build`: built production bundle in 1.02s with zero errors or warnings.
+- `GET /api/risk?date=2022-06-16` queried via Vite proxy: verified all 8 districts returned with Sylhet flood score 98.01 (High level, red marker).
+- 360 px width check: verified mobile responsiveness down to 360px with `overflow-x: hidden` and zero horizontal overflow.
+- `pytest`: 140 backend tests pass.
+
 

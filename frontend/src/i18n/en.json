@@ -1,1 +1,53 @@
-{}
+{
+  "appName": "Krishi Kotha",
+  "tagline": "NASA satellite data for Bangladesh farmers",
+  "nav": {
+    "dashboard": "Dashboard",
+    "replay": "Event Replay",
+    "simulator": "Simulator",
+    "method": "Method & Data"
+  },
+  "lang": {
+    "toggle": "বাংলা",
+    "current": "EN"
+  },
+  "hazard": {
+    "drought": "Drought",
+    "flood": "Flood",
+    "salt": "Salinity"
+  },
+  "level": {
+    "low": "Low",
+    "moderate": "Moderate",
+    "high": "High"
+  },
+  "dashboard": {
+    "title": "District Risk Dashboard",
+    "selectDistrict": "Select a district on the map",
+    "hazardLabel": "Hazard",
+    "datePicker": "Date",
+    "dataFreshness": "Data freshness"
+  },
+  "districtPanel": {
+    "scores": "Risk Scores",
+    "whyScore": "Why this score",
+    "inputName": "Input",
+    "weight": "Weight",
+    "value": "Value",
+    "source": "Source",
+    "dataDate": "Data date"
+  },
+  "map": {
+    "legend": "Legend",
+    "score": "Score"
+  },
+  "disclaimer": "Based on NASA satellite data. Not an official government warning.",
+  "loading": "Loading…",
+  "error": "Could not load data. Please try again.",
+  "noData": "No data available for this date.",
+  "fresh": {
+    "rain": "Rainfall: NASA GPM IMERG V07, data to",
+    "soil": "Soil: NASA POWER, data to",
+    "tmax": "Temperature: NASA POWER, data to"
+  }
+}
