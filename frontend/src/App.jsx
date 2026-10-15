@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LangProvider } from './i18n/index.jsx';
 import Layout from './components/Layout.jsx';
@@ -24,4 +24,3 @@ export default function App() {
     </LangProvider>
   );
 }
-

@@ -1,9 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { useLang, t } from '../i18n/index.jsx';
 import { formatDate } from '../utils/format.js';
 
 /**
- * DataFreshness â€” shows the data source and last data date for the
+ * DataFreshness — shows the data source and last data date for the
  * currently displayed risk snapshot.
  *
  * @param {{ sources: object|null }} props
@@ -35,9 +35,10 @@ export default function DataFreshness({ sources }) {
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-const style = document.createElement('style');
-style.textContent = `
+/* ─── Styles ────────────────────────────────────────────────────────── */
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .data-freshness {
   display: flex;
   flex-wrap: wrap;
@@ -54,8 +55,8 @@ style.textContent = `
   font-weight: 600;
 }
 `;
-if (!document.getElementById('data-freshness-styles')) {
-  style.id = 'data-freshness-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('data-freshness-styles')) {
+    style.id = 'data-freshness-styles';
+    document.head.appendChild(style);
+  }
 }
-

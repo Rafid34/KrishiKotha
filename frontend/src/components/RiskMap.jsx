@@ -44,7 +44,7 @@ function LegendControl() {
 
 
 /**
- * RiskMap â€” Leaflet map with 8 district markers coloured by the active hazard level.
+ * RiskMap — Leaflet map with 8 district markers coloured by the active hazard level.
  *
  * @param {{
  *   districts: Array<{id, name_en, name_bn, lat, lon}>,
@@ -72,7 +72,7 @@ export default function RiskMap({
 
   useEffect(() => { setTileError(false); }, [overlayKey, date]);
 
-  // Build a lookup: district_id â†’ risk entry
+  // Build a lookup: district_id -> risk entry
   const riskByDistrict = useMemo(() => {
     const map = {};
     for (const r of riskData) map[r.district_id] = r;
@@ -120,7 +120,7 @@ export default function RiskMap({
           const hazardName = hazardLabel(hazard, lang);
           const isSelected = selectedId === district.id;
 
-          // aria-label per spec Â§8.4: "Sylhet, flood risk high, score 84"
+          // aria-label per spec §8.4: "Sylhet, flood risk high, score 84"
           const ariaLabel = `${district.name_en}, ${hazardLabel(hazard, 'en')} risk ${level}${score != null ? `, score ${Math.round(score)}` : ''}`;
 
           return (
@@ -153,7 +153,7 @@ export default function RiskMap({
                   <div className="map-tooltip__row">
                     <span>{hazardName}:</span>
                     <span style={{ color: level === 'moderate' ? 'var(--risk-moderate-text)' : color, fontWeight: 700 }}>
-                      {score != null ? Math.round(score) : 'â€”'}
+                      {score != null ? Math.round(score) : '—'}
                     </span>
                   </div>
                 </div>
@@ -177,7 +177,7 @@ export default function RiskMap({
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Styles ────────────────────────────────────────────────────────── */
 const style = document.createElement('style');
 style.textContent = `
 .risk-map {

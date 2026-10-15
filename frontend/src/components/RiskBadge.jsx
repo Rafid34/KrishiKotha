@@ -3,7 +3,7 @@ import { LEVEL_META, levelLabel } from '../utils/risk.js';
 import { useLang, t } from '../i18n/index.jsx';
 
 /**
- * LevelIcon â€” SVG icon shape for a risk level.
+ * LevelIcon — SVG icon shape for a risk level.
  * Circle = low, Triangle = moderate, Square = high.
  * Always accompanies the colour so colourblind users are not excluded.
  */

@@ -471,3 +471,4 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 
 - R-003: FIXED, `.\.venv\Scripts\python.exe scripts\check_contrast.py`
 - R-004: FIXED, `cd frontend; npm test -- src/__tests__/disclaimer.test.jsx`
+- R-010: FIXED, `.\.venv\Scripts\python.exe scripts\check_encoding.py`

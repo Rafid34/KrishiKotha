@@ -4,7 +4,7 @@ import { LevelIcon } from './RiskBadge.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 
 /**
- * Legend â€” shows the three risk levels with colour, icon and label.
+ * Legend — shows the three risk levels with colour, icon and label.
  * Placed in the bottom-left corner of the map.
  */
 export default function Legend() {
@@ -25,7 +25,7 @@ export default function Legend() {
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Styles ────────────────────────────────────────────────────────── */
 const style = document.createElement('style');
 style.textContent = `
 .legend {

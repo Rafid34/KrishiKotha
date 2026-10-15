@@ -1,12 +1,12 @@
-﻿import React from 'react';
+import React from 'react';
 import { useLang, t } from '../i18n/index.jsx';
 import { HAZARD_LABELS } from '../utils/risk.js';
 
 const HAZARDS = ['drought', 'flood', 'salt'];
 
 /**
- * HazardToggle â€” three native radio buttons for selecting the active hazard.
- * Spec Â§8.4: "The hazard toggle uses native radio inputs."
+ * HazardToggle — three native radio buttons for selecting the active hazard.
+ * Spec §8.4: "The hazard toggle uses native radio inputs."
  */
 export default function HazardToggle({ value, onChange }) {
   const { lang } = useLang();
@@ -41,9 +41,10 @@ export default function HazardToggle({ value, onChange }) {
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-const style = document.createElement('style');
-style.textContent = `
+/* ─── Styles ────────────────────────────────────────────────────────── */
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .hazard-toggle {
   border: none;
   padding: 0;
@@ -95,8 +96,8 @@ style.textContent = `
   outline-offset: 2px;
 }
 `;
-if (!document.getElementById('hazard-toggle-styles')) {
-  style.id = 'hazard-toggle-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('hazard-toggle-styles')) {
+    style.id = 'hazard-toggle-styles';
+    document.head.appendChild(style);
+  }
 }
-

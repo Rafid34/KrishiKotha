@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useLang, t } from '../i18n/index.jsx';
 
@@ -66,9 +66,10 @@ export default function Layout() {
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-const style = document.createElement('style');
-style.textContent = `
+/* ─── Styles ────────────────────────────────────────────────────────── */
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .layout {
   display: flex;
   flex-direction: column;
@@ -187,8 +188,8 @@ style.textContent = `
   .layout__header-inner { padding: 0 var(--space-3); gap: var(--space-2); }
 }
 `;
-if (!document.getElementById('layout-styles')) {
-  style.id = 'layout-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('layout-styles')) {
+    style.id = 'layout-styles';
+    document.head.appendChild(style);
+  }
 }
-

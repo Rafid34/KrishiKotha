@@ -6,7 +6,7 @@ import DataFreshness from '../components/DataFreshness.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 import { getDistricts, getRisk } from '../api/client.js';
 
-// Demo date â€” 2022-06-16 is the key event date in the snapshots
+// Demo date — 2022-06-16 is the key event date in the snapshots
 const DEMO_DATE = '2022-06-16';
 
 export default function Dashboard() {
@@ -65,7 +65,7 @@ export default function Dashboard() {
           </h1>
 
           <div className="dashboard__control-row">
-            {/* Hazard toggle (native radios per spec Â§8.4) */}
+            {/* Hazard toggle (native radios per spec §8.4) */}
             <HazardToggle value={hazard} onChange={handleHazardChange} />
 
             {/* Date picker */}
@@ -143,7 +143,7 @@ export default function Dashboard() {
   );
 }
 
-/* â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Styles ────────────────────────────────────────────────────────── */
 const style = document.createElement('style');
 style.textContent = `
 .dashboard {
