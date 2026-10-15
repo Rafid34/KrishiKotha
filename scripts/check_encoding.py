@@ -31,12 +31,12 @@ BINARY_EXTENSIONS = {
 }
 
 MOJIBAKE_PATTERNS = [
-    'â€',
-    'Ã',
-    'à¦',
-    'à§',
-    'Â',
-    '\ufffd',
+    '\u00e2\u20ac',      # â€
+    '\u00c3',          # Ã
+    '\u00e0\u00a6',      # à¦
+    '\u00e0\u00a7',      # à§
+    '\u00c2',          # Â
+    '\ufffd',          # replacement char
 ]
 
 
@@ -77,6 +77,8 @@ def main() -> int:
     errors = 0
 
     for file_path in tracked_files:
+        if file_path.resolve() == Path(__file__).resolve():
+            continue
         if is_binary(file_path):
             continue
 

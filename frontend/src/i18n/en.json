@@ -60,7 +60,7 @@
     "rainfall": "Rainfall",
     "soilWetness": "Soil wetness",
     "pctl90": "90th pctl baseline",
-    "trendSummary": "Past 60 days rainfall and soil wetness series from NASA IMERG and POWER."
+    "trendSummary": "60-day trend: Total rainfall {totalRain} mm, peak rainfall {peakRain} mm on {peakDay}, soil wetness range {soilMin}–{soilMax}%."
   },
   "replay": {
     "title": "Sylhet floods, June 2022",
@@ -70,7 +70,7 @@
     "step": "Step",
     "leadTimeBanner": "Warning came {days} days before the flood",
     "fixedThresholdsNote": "Thresholds were fixed before testing and not tuned on this event. Data from NASA GPM IMERG and POWER.",
-    "chartSummary": "Rainfall accumulation and flood risk rise leading to onset on 16 June 2022.",
+    "chartSummary": "Event summary: Total rainfall {totalRain} mm, peak rainfall {peakRain} mm on {peakDate}, peak flood score {peakScore} on {peakScoreDate}.",
     "milestoneModerate": "First Moderate",
     "milestoneHigh": "First High",
     "milestoneOnset": "Reference Onset",

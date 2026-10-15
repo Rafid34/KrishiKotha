@@ -26,9 +26,9 @@ export default function TrendChart({ series = [], districtId }) {
   const { lang } = useLang();
 
   // Compute 90th percentile of rainfall across the window if not in data point
-  const { chartData, p90Value, maxRain, peakDay } = useMemo(() => {
+  const { chartData, p90Value, maxRain, peakDay, totalRain, minSoil, maxSoil } = useMemo(() => {
     if (!series || series.length === 0) {
-      return { chartData: [], p90Value: null, maxRain: 0, peakDay: null };
+      return { chartData: [], p90Value: null, maxRain: 0, peakDay: null, totalRain: 0, minSoil: null, maxSoil: null };
     }
 
     const rainValues = series
@@ -47,7 +47,9 @@ export default function TrendChart({ series = [], districtId }) {
 
     const formatted = series.map(p => {
       const r = p.rain_mm != null ? Math.round(p.rain_mm * 10) / 10 : 0;
-      const s = p.soil_wetness != null ? Math.round(p.soil_wetness * 100) : null;
+      const s = p.soil_pct != null
+        ? Math.round(p.soil_pct)
+        : (p.soil_wetness != null ? Math.round(p.soil_wetness * 100) : null);
       const p90 = p.rain_pctl_90 ?? fallbackP90;
 
       if (r > maxR) {
@@ -64,13 +66,17 @@ export default function TrendChart({ series = [], districtId }) {
       };
     });
 
-    return {
-      chartData: formatted,
-      p90Value: fallbackP90 != null ? Math.round(fallbackP90 * 10) / 10 : null,
-      maxRain: maxR,
-      peakDay: peak,
-    };
-  }, [series]);
+      const soilVals = formatted.map(p => p.soil_pct).filter(v => v != null);
+      return {
+        chartData: formatted,
+        p90Value: fallbackP90 != null ? Math.round(fallbackP90 * 10) / 10 : null,
+        maxRain: maxR,
+        peakDay: peak,
+        totalRain: formatted.reduce((acc, p) => acc + (p.rain_mm || 0), 0),
+        minSoil: soilVals.length > 0 ? Math.min(...soilVals) : null,
+        maxSoil: soilVals.length > 0 ? Math.max(...soilVals) : null,
+      };
+    }, [series]);
 
   if (!series || series.length === 0) {
     return (
@@ -80,11 +86,13 @@ export default function TrendChart({ series = [], districtId }) {
     );
   }
 
-  // Current conditions summary for accessibility
-  const lastPt = chartData[chartData.length - 1];
-  const summaryText = lang === 'bn'
-    ? `৬০ দিনের প্রবণতা: সর্বোচ্চ বৃষ্টি ${formatNumber(maxRain, 1, lang)} মিমি (${peakDay ? formatDate(peakDay, lang) : ''}), বর্তমান মাটির আর্দ্রতা ${lastPt?.soil_pct != null ? formatNumber(lastPt.soil_pct, 0, lang) : '—'}%।`
-    : `60-day trend: Peak rainfall ${formatNumber(maxRain, 1, lang)} mm on ${peakDay || '—'}, current root-zone soil wetness ${lastPt?.soil_pct != null ? lastPt.soil_pct : '—'}%.`;
+  // Current conditions summary for accessibility (R-019)
+  const summaryText = t('districtPanel.trendSummary', lang)
+    .replace('{totalRain}', formatNumber(totalRain, 1, lang))
+    .replace('{peakRain}', formatNumber(maxRain, 1, lang))
+    .replace('{peakDay}', peakDay ? formatDate(peakDay, lang) : '—')
+    .replace('{soilMin}', minSoil != null ? formatNumber(minSoil, 0, lang) : '—')
+    .replace('{soilMax}', maxSoil != null ? formatNumber(maxSoil, 0, lang) : '—');
 
   return (
     <div className="trend-chart" role="region" aria-label={t('districtPanel.rainfallTrend', lang)}>
@@ -94,7 +102,13 @@ export default function TrendChart({ series = [], districtId }) {
         </h3>
       </div>
 
-      <div className="trend-chart__plot" style={{ width: '100%', height: 210 }}>
+      <div
+        className="trend-chart__plot"
+        role="img"
+        aria-label={t('districtPanel.rainfallTrend', lang)}
+        aria-describedby="trend-chart-summary"
+        style={{ width: '100%', height: 210 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -173,8 +187,8 @@ export default function TrendChart({ series = [], districtId }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Accessible summary text below chart per Section 8.4 */}
-      <p className="trend-chart__summary" lang={lang === 'bn' ? 'bn' : undefined}>
+      {/* Accessible summary text below chart per Section 8.4 & R-019 */}
+      <p id="trend-chart-summary" className="trend-chart__summary" lang={lang === 'bn' ? 'bn' : undefined}>
         {summaryText}
       </p>
     </div>

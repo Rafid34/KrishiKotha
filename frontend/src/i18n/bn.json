@@ -60,7 +60,7 @@
     "rainfall": "বৃষ্টিপাত",
     "soilWetness": "মাটির আর্দ্রতা",
     "pctl90": "৯০তম পারসেন্টাইল বেসলাইন",
-    "trendSummary": "NASA IMERG ও POWER থেকে প্রাপ্ত গত ৬০ দিনের বৃষ্টিপাত ও মাটির আর্দ্রতা।"
+    "trendSummary": "৬০ দিনের প্রবণতা: মোট বৃষ্টিপাত {totalRain} মিমি, সর্বোচ্চ বৃষ্টি {peakRain} মিমি ({peakDay}), মাটির আর্দ্রতার বিস্তার {soilMin}–{soilMax}%।"
   },
   "replay": {
     "title": "সিলেট বন্যা, জুন ২০২২",
@@ -70,7 +70,7 @@
     "step": "ধাপ",
     "leadTimeBanner": "বন্যার {days} দিন আগেই সতর্কতা পাওয়া যায়",
     "fixedThresholdsNote": "পরীক্ষার আগেই থ্রেশহোল্ড নির্ধারিত ছিল এবং এই ঘটনার জন্য পরিবর্তন করা হয়নি। NASA GPM IMERG ও POWER-এর তথ্য।",
-    "chartSummary": "১৬ জুন ২০২২-এ বন্যা শুরুর পূর্ববর্তী বৃষ্টি সঞ্চয় এবং ঝুঁকির ঊর্ধ্বগতি।",
+    "chartSummary": "ঘটনা সারসংক্ষেপ: মোট বৃষ্টিপাত {totalRain} মিমি, সর্বোচ্চ বৃষ্টি {peakRain} মিমি ({peakDate}), সর্বোচ্চ বন্যা স্কোর {peakScore} ({peakScoreDate})।",
     "milestoneModerate": "প্রথম মাঝারি ঝুঁকি",
     "milestoneHigh": "প্রথম উচ্চ ঝুঁকি",
     "milestoneOnset": "রেফারেন্স বন্যা শুরু",

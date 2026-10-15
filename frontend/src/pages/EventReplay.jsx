@@ -79,15 +79,41 @@ export default function EventReplay() {
   const currentPoint = series[currentDateIndex] || null;
   const currentDate = currentPoint?.date || '';
 
-  // Formatted chart points
-  const chartData = useMemo(() => {
-    return series.map(p => ({
-      date: p.date,
-      shortDate: p.date ? p.date.slice(5) : '',
-      rain_mm: p.rain_mm != null ? p.rain_mm : 0,
-      flood_score: p.flood_score,
-      p90: p.rain_pctl_90,
-    }));
+  // Formatted chart points and data statistics (R-019)
+  const { chartData, totalRain, peakRain, peakRainDate, peakScore, peakScoreDate } = useMemo(() => {
+    let totRain = 0;
+    let maxR = 0;
+    let maxRDate = '';
+    let maxS = 0;
+    let maxSDate = '';
+    const formatted = series.map(p => {
+      const r = p.rain_mm != null ? p.rain_mm : 0;
+      const s = p.flood_score != null ? p.flood_score : 0;
+      totRain += r;
+      if (r > maxR) {
+        maxR = r;
+        maxRDate = p.date;
+      }
+      if (s > maxS) {
+        maxS = s;
+        maxSDate = p.date;
+      }
+      return {
+        date: p.date,
+        shortDate: p.date ? p.date.slice(5) : '',
+        rain_mm: r,
+        flood_score: p.flood_score,
+        p90: p.rain_pctl_90,
+      };
+    });
+    return {
+      chartData: formatted,
+      totalRain: totRain,
+      peakRain: maxR,
+      peakRainDate: maxRDate,
+      peakScore: maxS,
+      peakScoreDate: maxSDate,
+    };
   }, [series]);
 
   const handleStepClick = dateStr => {
@@ -133,6 +159,13 @@ export default function EventReplay() {
       </div>
     );
   }
+
+  const chartSummaryText = t('replay.chartSummary', lang)
+    .replace('{totalRain}', formatNumber(totalRain, 1, lang))
+    .replace('{peakRain}', formatNumber(peakRain, 1, lang))
+    .replace('{peakDate}', peakRainDate ? formatDate(peakRainDate, lang) : '—')
+    .replace('{peakScore}', formatNumber(peakScore, 1, lang))
+    .replace('{peakScoreDate}', peakScoreDate ? formatDate(peakScoreDate, lang) : '—');
 
   return (
     <div className="replay-page" role="main" aria-label={t('replay.title', lang)}>
@@ -239,7 +272,13 @@ export default function EventReplay() {
           </span>
         </div>
 
-        <div className="replay-chart-container" style={{ width: '100%', height: 320 }}>
+        <div
+          className="replay-chart-container"
+          role="img"
+          aria-label={t('replay.title', lang)}
+          aria-describedby="replay-chart-summary"
+          style={{ width: '100%', height: 320 }}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartData}
@@ -386,9 +425,9 @@ export default function EventReplay() {
           </ResponsiveContainer>
         </div>
 
-        {/* Text summary under chart */}
-        <p className="replay-chart-summary" lang={lang === 'bn' ? 'bn' : undefined}>
-          {t('replay.chartSummary', lang)}
+        {/* Text summary under chart per R-019 */}
+        <p id="replay-chart-summary" className="replay-chart-summary" lang={lang === 'bn' ? 'bn' : undefined}>
+          {chartSummaryText}
         </p>
       </section>
 
