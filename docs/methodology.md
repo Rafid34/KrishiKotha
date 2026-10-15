@@ -44,3 +44,19 @@
 - 134-character limit: Enforced strictly in `composer.py` on Unicode NFC-normalized Bangla text (`text_bn`). Any rendered string exceeding 134 characters raises `MessageLengthExceededError`.
 - Message wording: All templates describe observed conditions only (past rainfall, soil moisture, dry soil) and contain no forecast claims.
 
+## Phase 8 decisions (district detail, event replay and backtest)
+
+- Reference flood onset date: 2022-06-16.
+- Public citations for reference onset:
+  1. Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), *Annual Flood Report 2022*, Section 4 (Surma-Kushiyara Basin flood hydrographs: rivers crossed danger levels rapidly between 15-16 June 2022, causing catastrophic inundation of Sylhet and Sunamganj on 16 June 2022).
+  2. UN OCHA / ReliefWeb: "Bangladesh: Floods - Jun 2022" (ReliefWeb Situation Report, 17 June 2022: heavy monsoon flash floods inundated northeastern districts with severe impact starting 16 June 2022).
+- Derivation of the five replay step dates from data (Section 9 task 8.4):
+  - Step 1 ("Rain begins"): first day rainfall exceeds the 50th baseline percentile of the 3-day sum (`rain3_pctl > 50`) -> `2022-05-15`.
+  - Step 2 ("Rain builds"): first day `f_rain7` is at least 60 (`rain7_pctl >= 60`) on or after Step 1 -> `2022-05-15`.
+  - Step 3 ("Heavy rain"): first day flood level is Moderate (`flood_level == "moderate"`, score 40–69.99) on or after Step 2 -> `2022-05-25`.
+  - Step 4 ("Extreme rain"): first day flood level is High (`flood_level == "high"`, score >= 70) on or after Step 3 -> `2022-06-02`.
+  - Step 5 ("Flood"): reference onset date -> `2022-06-16`.
+- First Moderate and High milestone dates: `first_moderate = 2022-05-25`, `first_high = 2022-06-02`.
+- Measured lead time: 14 days (`2022-06-16` minus `2022-06-02`), exceeding the 3-day target without threshold tuning.
+- Fixed thresholds: As required by Sections 8.4, 9, 10.4 and 13, all thresholds (<40 Low, 40-69.99 Moderate, >=70 High; weights 0.40/0.35/0.25) were fixed in advance and were not tuned to fit the Sylhet 2022 event.
+

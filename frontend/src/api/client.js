@@ -115,3 +115,10 @@ export function postSimSms(body) {
     return res.json();
   });
 }
+
+// ── Backtest route ────────────────────────────────────────────────────────────
+
+/** GET /api/backtest/sylhet-2022 → backtest replay data */
+export function getBacktestSylhet() {
+  return get('/backtest/sylhet-2022');
+}

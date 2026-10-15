@@ -150,3 +150,30 @@ class SimSmsOut(BaseModel):
     replies: list[SimReply]
     subscriber_id: int | None = None
 
+
+class ReplayStep(BaseModel):
+    step: int
+    label: str
+    label_bn: str | None = None
+    date: str | None = None
+
+
+class BacktestPoint(BaseModel):
+    date: str
+    flood_score: float
+    flood_level: str
+    rain_mm: float | None = None
+    soil_wetness: float | None = None
+    rain_pctl_90: float | None = None
+
+
+class BacktestOut(BaseModel):
+    district_id: str
+    series: list[BacktestPoint]
+    first_moderate: str | None = None
+    first_high: str | None = None
+    reference_onset: str
+    lead_time_days: int | None = None
+    steps: list[ReplayStep]
+    citation: str | None = None
+

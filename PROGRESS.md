@@ -10,6 +10,7 @@
 | 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. Spec Section 7.2 `date` param on `GET /api/risk/{district_id}` implemented: 62 tests pass. |
 | 6: Advice engine, parser, SMS simulator API | Done | Verified: 140 tests pass (33 in `test_advice.py`, 38 in `test_parser.py`, 16 in `test_api.py`); verbatim Bangla templates from Section 7.4; 134-character limit enforced with `MessageLengthExceededError`; `POST /api/sim/sms` returns Bangla replies (welcome + advice) and logs 2 messages; observed conditions only, no forecasts. |
 | 7: Frontend scaffold and risk map dashboard | Done | Verified: 22 vitest tests pass; `npm run build` succeeds; map renders 8 district markers with OpenStreetMap tiles; date 2022-06-16 with flood hazard shows Sylhet High (score 98.01, red marker); RiskBadge and Legend follow Section 8.4 (icon shape + colour + text label); fonts self-hosted (@fontsource Inter & Noto Sans Bengali); 360 px mobile width verified with zero horizontal overflow. |
+| 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
 
 ## Spec patch (2026-10-15)
 
@@ -278,5 +279,65 @@ Implemented Phase 7: Frontend scaffold and risk map dashboard (Sections 8, 9).
 - `GET /api/risk?date=2022-06-16` queried via Vite proxy: verified all 8 districts returned with Sylhet flood score 98.01 (High level, red marker).
 - 360 px width check: verified mobile responsiveness down to 360px with `overflow-x: hidden` and zero horizontal overflow.
 - `pytest`: 140 backend tests pass.
+
+## Phase 8 details
+
+Implemented Phase 8: District detail and event replay (Sections 7.2, 8.2, 8.4, 9).
+
+### Implemented components
+
+- **`backend/app/services/backtest.py`**:
+  - `compute_backtest`: derives the five replay step dates, milestone dates, lead time, and reference onset citation directly from snapshot series data without hard-coded dates.
+  - Derivation rules from task 8.4:
+    - Step 1 ("Rain begins"): first day 3-day rainfall exceeds the 50th baseline percentile (`rain3_pctl > 50`) -> `2022-05-15`.
+    - Step 2 ("Rain builds"): first day `f_rain7` is at least 60 (`rain7_pctl >= 60`) on or after Step 1 -> `2022-05-15`.
+    - Step 3 ("Heavy rain"): first day flood level is Moderate (`flood_level == "moderate"`, score 40–69.99) on or after Step 2 -> `2022-05-25`.
+    - Step 4 ("Extreme rain"): first day flood level is High (`flood_level == "high"`, score >= 70) on or after Step 3 -> `2022-06-02`.
+    - Step 5 ("Flood"): reference flood onset date -> `2022-06-16`.
+  - Milestone dates: `first_moderate = "2022-05-25"`, `first_high = "2022-06-02"`.
+  - Measured lead time: 14 days (`(2022-06-16 - 2022-06-02).days = 14`).
+  - Strict preservation of fixed thresholds: no thresholds tuned on the Sylhet 2022 event.
+  - Reference onset citation: Flood Forecasting and Warning Centre (FFWC) BWDB *Annual Flood Report 2022* & UN OCHA / ReliefWeb *Bangladesh: Floods - Jun 2022*.
+- **`backend/app/routers/backtest.py`**:
+  - `GET /api/backtest/sylhet-2022`: queries Sylhet 2022 event snapshots (`2022-05-15` to `2022-06-30`), observations (`precip_mm`, `soil_wetness`), and baseline 90th percentile by day of year; returns `BacktestOut` per Section 7.2.
+- **`backend/app/schemas.py`**:
+  - Added `ReplayStep`, `BacktestPoint`, and `BacktestOut` response models.
+- **`backend/app/main.py`**:
+  - Mounted `backtest.router` at `/api/backtest`.
+- **`backend/tests/test_backtest.py`** (7 tests):
+  - `test_synthetic_series_known_dates`: asserts exact derivation of 5 step dates, milestone dates, and lead time on a known synthetic series.
+  - `test_lead_time_calculation_variations`: verifies 3-day and 7-day lead times.
+  - `test_flood_never_reaches_high`: verifies safe nulls when High level is never reached.
+  - `test_empty_series_handled_safely`: graceful handling of empty series without exceptions.
+  - `test_public_citation_present`: confirms citation is returned.
+  - `test_api_backtest_sylhet_endpoint`: integration test asserting 200 OK and Section 7.2 shape on `GET /api/backtest/sylhet-2022`.
+  - `test_api_backtest_empty_database`: asserts 404 on unseeded database.
+- **`frontend/src/api/client.js`**:
+  - Added `getBacktestSylhet()` wrapper.
+- **`frontend/src/components/FactorBars.jsx`**:
+  - Renders factor breakdown from `/explain` with localized titles, progress bars, weights, raw sensor measurements, source/date provenance, coastal proximity multiplier card (salinity), and degraded fallback badge.
+- **`frontend/src/components/TrendChart.jsx`**:
+  - Recharts composed chart showing 60-day rainfall bars (`rain_mm`, blue), soil wetness line (`soil_pct`, orange), baseline 90th percentile dashed reference line, custom tooltip, and accessible summary text below chart per Section 8.4.
+- **`frontend/src/components/DistrictPanel.jsx`**:
+  - Full implementation of Section 8.2: district names in both languages, 3 score cards with `RiskBadge` (clickable to switch factor view), embedded `TrendChart`, embedded `FactorBars`, "Advice for farmers" section with crop selector (Aman, Boro, Aus) calling live `/api/advice`, and mandatory disclaimer.
+- **`frontend/src/pages/EventReplay.jsx`**:
+  - Full implementation of Section 8.2:
+    - 5 step chips with active highlight as timeline advances.
+    - Interactive timeline player with range slider and Play/Pause animation.
+    - Recharts timeline chart with rainfall bars, flood score line, threshold lines (Moderate 40, High 70), milestone vertical markers (`first_moderate`, `first_high`, reference onset `2022-06-16`), and current slider date marker.
+    - Summary box with lead time banner ("Warning came 14 days before the flood" from API), fixed thresholds explanation, reference citation, and disclaimer.
+- **`frontend/src/i18n/en.json` & `bn.json`**:
+  - Added translation keys for FactorBars, TrendChart, EventReplay, and DistrictPanel.
+- **`frontend/src/__tests__/replay.test.js`**:
+  - Added 3 Vitest tests for backtest client and replay step sequencing.
+
+### Verification
+
+- `pytest`: 147 backend tests pass (7 in `test_backtest.py`).
+- `npm test`: 25 frontend vitest tests pass across 2 test files.
+- `npm run build`: builds production bundle cleanly with zero errors.
+- `GET /api/backtest/sylhet-2022`: verified returning HTTP 200 with 47 points, `lead_time_days: 14`, and 5 derived step dates.
+- Replay lead time equals API value: verified `EventReplay.jsx` displays `lead_time_days` from the API.
+- District detail verified: clicking district shows scores, TrendChart, FactorBars, and farmer advice.
 
 

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import VERSION, get_settings
 from .errors import install_error_handlers
-from .routers import advice, districts, messaging, meta, risk
+from .routers import advice, backtest, districts, messaging, meta, risk
 
 log = logging.getLogger("krishi_kotha")
 
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(risk.router)
     app.include_router(advice.router)
     app.include_router(messaging.router)
+    app.include_router(backtest.router)
     return app
 
 
