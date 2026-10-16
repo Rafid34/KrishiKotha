@@ -11,12 +11,12 @@ const FACTOR_NAMES = {
   seasonal_intrusion: { en: 'Seasonal Salinity Index', bn: 'মৌসুমী লবণাক্ততা সূচক' },
   rain_deficit: { en: '30-Day Rainfall Deficit', bn: '৩০ দিনের বৃষ্টির ঘাটতি' },
   heat_anomaly: { en: '7-Day Temperature Anomaly', bn: '৭ দিনের তাপমাত্রার অসঙ্গতি' },
-  // Matches the input name emitted by `score_salt` in the backend (`vegetation_anomaly`).
   vegetation_anomaly: { en: 'Vegetation Health Anomaly (NDVI)', bn: 'উদ্ভিদ স্বাস্থ্য অসঙ্গতি (NDVI)' },
 };
 
 /**
  * FactorBars — displays weighted input components and provenance behind a risk score.
+ * Restyled for dark UI with Acid Lime accent progress bars and technical monospace values.
  *
  * @param {{
  *   explain: object|null,
@@ -38,7 +38,6 @@ export default function FactorBars({ explain, hazard }) {
   const inputs = hazardBlock?.inputs ?? [];
   const coastal = hazardBlock?.coastal_factor ?? null;
   const isDegraded = explain.degraded;
-
 
   return (
     <section className="factor-bars" aria-label={t('districtPanel.whyScore', lang)}>
@@ -138,15 +137,16 @@ export default function FactorBars({ explain, hazard }) {
 }
 
 /* ─── Styles ───────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .factor-bars {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  background: var(--bg);
+  background: var(--surface-elevated);
   border-radius: var(--radius-md);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--border);
 }
 .factor-bars--empty {
@@ -166,19 +166,20 @@ style.textContent = `
   gap: var(--space-2);
 }
 .factor-bars__title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--foreground);
   margin: 0;
 }
 .factor-bars__degraded-badge {
   font-size: 11px;
-  background: #FFF3CD;
-  color: #856404;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid #FFEBAA;
-  font-weight: 500;
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--risk-moderate);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  font-weight: 600;
 }
 
 .factor-bars__list {
@@ -190,7 +191,7 @@ style.textContent = `
 .factor-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 .factor-item__top {
   display: flex;
@@ -200,8 +201,8 @@ style.textContent = `
 }
 .factor-item__name {
   font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--ink);
+  font-weight: 500;
+  color: var(--foreground);
 }
 .factor-item__meta {
   display: flex;
@@ -211,29 +212,30 @@ style.textContent = `
 .factor-item__raw {
   font-size: 11px;
   color: var(--ink-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .factor-item__weight {
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  color: var(--brand);
-  background: color-mix(in srgb, var(--brand) 10%, transparent);
-  padding: 1px 5px;
-  border-radius: var(--radius-sm);
+  color: var(--accent);
+  background: rgba(212, 242, 104, 0.12);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
 }
 
 .factor-item__bar-track {
-  height: 7px;
-  background: var(--surface);
-  border-radius: 4px;
+  height: 8px;
+  background: #141210;
+  border-radius: var(--radius-full);
   overflow: hidden;
   border: 1px solid var(--border);
 }
 .factor-item__bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand), color-mix(in srgb, var(--brand) 70%, var(--risk-high)));
-  border-radius: 4px;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--accent), var(--brand-dark));
+  border-radius: var(--radius-full);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .factor-item__source {
@@ -248,18 +250,18 @@ style.textContent = `
   margin: 0;
 }
 .factor-note--fallback {
-  background: #FFF3CD;
-  color: #856404;
-  border: 1px solid #FFEBAA;
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--risk-moderate);
+  border: 1px solid rgba(251, 191, 36, 0.3);
   border-radius: var(--radius-sm);
   padding: 3px 6px;
 }
 
 .factor-coastal {
-  background: var(--surface);
+  background: #141210;
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
-  padding: var(--space-2);
+  padding: var(--space-3);
   margin-top: var(--space-1);
 }
 .factor-coastal__header {
@@ -269,13 +271,14 @@ style.textContent = `
 }
 .factor-coastal__label {
   font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--ink);
+  font-weight: 600;
+  color: var(--foreground);
 }
 .factor-coastal__multiplier {
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--brand);
+  color: var(--accent);
 }
 .factor-coastal__detail {
   font-size: 11px;
@@ -283,7 +286,8 @@ style.textContent = `
   margin-top: 2px;
 }
 `;
-if (!document.getElementById('factor-bars-styles')) {
-  style.id = 'factor-bars-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('factor-bars-styles')) {
+    style.id = 'factor-bars-styles';
+    document.head.appendChild(style);
+  }
 }

@@ -42,9 +42,8 @@ function LegendControl() {
   return container ? createPortal(<Legend />, container) : null;
 }
 
-
 /**
- * RiskMap — Leaflet map with 8 district markers coloured by the active hazard level.
+ * RiskMap — Leaflet map with 8 district markers, dark pill labels, and Catalog label.
  *
  * @param {{
  *   districts: Array<{id, name_en, name_bn, lat, lon}>,
@@ -79,24 +78,35 @@ export default function RiskMap({
     return map;
   }, [riskData]);
 
+  const catalogDateStr = date || '16 Jun 2022';
+  const catalogHazardStr = hazardLabel(hazard, 'en');
+
   return (
     <div className="risk-map" role="region" aria-label="District risk map">
+      {/* Catalog label (technical metadata badge) */}
+      <div className="catalog-label map-catalog-label" aria-hidden="true">
+        <span className="catalog-label__dot" />
+        <span className="catalog-label__mono">
+          Fig. 1 {catalogHazardStr} risk, {catalogDateStr}
+        </span>
+      </div>
+
       <MapContainer
         center={BANGLADESH_CENTER}
         zoom={DEFAULT_ZOOM}
-        style={{ width: '100%', height: '100%', minHeight: 340 }}
+        style={{ width: '100%', height: '100%', minHeight: 340, background: '#0C0A09' }}
         zoomControl={true}
         attributionControl={true}
         id="district-risk-map"
       >
-        {/* OpenStreetMap base tiles */}
+        {/* Dark Matter Carto basemap that reads cleanly on dark UI */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           maxZoom={18}
         />
 
-        {/* NASA GIBS overlay: added when selected and available, removed otherwise */}
+        {/* NASA GIBS overlay */}
         {showOverlay && (
           <TileLayer
             key={`${overlayLayer.id}-${date}`}
@@ -109,7 +119,7 @@ export default function RiskMap({
           />
         )}
 
-        {/* District markers */}
+        {/* District markers: equally sized (radius 16), solid dark pill labels */}
         {districts.map(district => {
           const risk = riskByDistrict[district.id];
           const hazardData = risk?.[hazard];
@@ -117,7 +127,6 @@ export default function RiskMap({
           const score = hazardData?.score;
           const color = levelColor(level);
           const districtName = lang === 'bn' ? district.name_bn : district.name_en;
-          const hazardName = hazardLabel(hazard, lang);
           const isSelected = selectedId === district.id;
 
           // aria-label per spec §8.4: "Sylhet, flood risk high, score 84"
@@ -127,12 +136,12 @@ export default function RiskMap({
             <CircleMarker
               key={district.id}
               center={[district.lat, district.lon]}
-              radius={isSelected ? 20 : 16}
+              radius={16}
               pathOptions={{
                 fillColor: color,
-                color: isSelected ? 'var(--ink)' : (level === 'moderate' ? 'var(--ink)' : '#fff'),
-                weight: isSelected ? 3 : 2,
-                fillOpacity: 0.85,
+                color: isSelected ? 'var(--accent)' : 'rgba(255, 255, 255, 0.7)',
+                weight: isSelected ? 3.5 : 1.5,
+                fillOpacity: 0.9,
                 opacity: 1,
               }}
               eventHandlers={{
@@ -141,21 +150,21 @@ export default function RiskMap({
               aria-label={ariaLabel}
               title={ariaLabel}
             >
+              {/* Permanent solid dark pill label showing district name + numeric score */}
               <Tooltip
                 direction="top"
                 offset={[0, -16]}
-                permanent={false}
-                sticky={false}
-                opacity={1}
+                permanent={true}
+                className="map-marker-pill"
               >
-                <div className="map-tooltip" lang={lang === 'bn' ? 'bn' : undefined}>
-                  <strong>{districtName}</strong>
-                  <div className="map-tooltip__row">
-                    <span>{hazardName}:</span>
-                    <span style={{ color: level === 'moderate' ? 'var(--risk-moderate-text)' : color, fontWeight: 700 }}>
-                      {score != null ? Math.round(score) : '—'}
-                    </span>
-                  </div>
+                <div className="map-marker-pill__content" lang={lang === 'bn' ? 'bn' : undefined}>
+                  <span className="map-marker-pill__name">{districtName}</span>
+                  <span
+                    className="map-marker-pill__score"
+                    style={{ color: color, fontWeight: 700 }}
+                  >
+                    {score != null ? Math.round(score) : '—'}
+                  </span>
                 </div>
               </Tooltip>
             </CircleMarker>
@@ -165,6 +174,7 @@ export default function RiskMap({
         {/* Legend inside the map */}
         <LegendControl />
       </MapContainer>
+
       <OverlayControl
         value={overlayKey}
         onChange={setOverlayKey}
@@ -178,72 +188,116 @@ export default function RiskMap({
 }
 
 /* ─── Styles ────────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .risk-map {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 340px;
+  min-height: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
 }
 
+/* Catalog label positioned top-left over map */
+.map-catalog-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Solid dark pill background for Leaflet markers */
+.leaflet-tooltip.map-marker-pill {
+  background: #1C1917 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #E7E5E4 !important;
+  border-radius: var(--radius-full) !important;
+  padding: 3px 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  font-family: var(--font-sans);
+  pointer-events: none;
+}
+.leaflet-tooltip-top.map-marker-pill::before {
+  border-top-color: #1C1917 !important;
+}
+.map-marker-pill__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.map-marker-pill__name {
+  font-weight: 500;
+  color: #E7E5E4;
+}
+.map-marker-pill__score {
+  font-family: var(--font-serif);
+  font-size: 12px;
+}
+
+/* Dark mode OverlayControl */
 .overlay-control {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   z-index: 1000;
-  max-width: min(240px, calc(100% - 70px));
+  max-width: min(260px, calc(100% - 60px));
   margin: 0;
-  padding: 6px 10px 8px;
-  background: rgba(255,255,255,.95);
+  padding: 8px 12px 10px;
+  background: rgba(28, 25, 24, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   font-size: 12px;
-  color: var(--ink);
+  color: var(--foreground);
 }
-.overlay-control__title { font-weight: 700; padding: 0 4px; }
+.overlay-control__title {
+  font-weight: 600;
+  padding: 0 4px;
+  color: var(--foreground);
+}
 .overlay-control__option {
   display: flex;
   align-items: center;
   gap: 6px;
   min-height: 28px;
   cursor: pointer;
+  color: var(--ink-muted);
 }
-.overlay-control__option input:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
-.overlay-control__credit { margin: 4px 0 0; color: var(--nasa-blue); font-weight: 600; }
-.overlay-control__fallback { margin: 4px 0 0; color: #856404; background: #FFF3CD; border-radius: var(--radius-sm); padding: 4px 6px; }
-
-.map-tooltip {
-  font-size: 13px;
-  line-height: 1.4;
-  min-width: 100px;
+.overlay-control__option:hover {
+  color: var(--foreground);
 }
-.map-tooltip__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 2px;
+.overlay-control__option input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-
-/* Leaflet tooltip custom styling */
-.leaflet-tooltip {
-  background: white !important;
-  border: none !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,.18) !important;
-  border-radius: 8px !important;
-  padding: 8px 12px !important;
-  color: var(--ink) !important;
+.overlay-control__credit {
+  margin: 6px 0 0;
+  color: var(--nasa-blue);
+  font-weight: 600;
+  font-size: 11px;
 }
-.leaflet-tooltip-top::before {
-  border-top-color: white !important;
+.overlay-control__fallback {
+  margin: 6px 0 0;
+  color: var(--risk-moderate);
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-size: 11px;
 }
 `;
-if (!document.getElementById('risk-map-styles')) {
-  style.id = 'risk-map-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('risk-map-styles')) {
+    style.id = 'risk-map-styles';
+    document.head.appendChild(style);
+  }
 }
-

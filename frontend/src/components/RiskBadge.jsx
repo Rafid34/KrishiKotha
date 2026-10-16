@@ -1,56 +1,58 @@
 import React from 'react';
+import { Circle, Triangle, Square } from 'lucide-react';
 import { LEVEL_META, levelLabel } from '../utils/risk.js';
-import { useLang, t } from '../i18n/index.jsx';
+import { useLang } from '../i18n/index.jsx';
 
 /**
- * LevelIcon — SVG icon shape for a risk level.
+ * LevelIcon — monochrome Lucide-style line icon for risk levels.
  * Circle = low, Triangle = moderate, Square = high.
  * Always accompanies the colour so colourblind users are not excluded.
  */
-export function LevelIcon({ level, size = 16, color: colorProp, ...props }) {
-  const color = colorProp ?? LEVEL_META[level]?.color ?? 'var(--risk-low)';
-  const icon = LEVEL_META[level]?.icon ?? 'circle';
+export function LevelIcon({ level, size = 14, color: colorProp, ...props }) {
+  const meta = LEVEL_META[level] ?? LEVEL_META.low;
+  const color = colorProp ?? meta.color;
+  const icon = meta.icon;
 
   if (icon === 'triangle') {
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 16 16"
+      <Triangle
+        size={size}
+        color={color}
+        fill={color}
+        fillOpacity={0.25}
+        strokeWidth={2}
         aria-hidden="true"
         focusable="false"
         {...props}
-      >
-        <polygon points="8,2 15,14 1,14" fill={color} stroke="var(--ink)" strokeWidth={1} />
-      </svg>
+      />
     );
   }
   if (icon === 'square') {
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 16 16"
+      <Square
+        size={size}
+        color={color}
+        fill={color}
+        fillOpacity={0.25}
+        strokeWidth={2}
         aria-hidden="true"
         focusable="false"
         {...props}
-      >
-        <rect x="2" y="2" width="12" height="12" rx="2" fill={color} />
-      </svg>
+      />
     );
   }
-  // default: circle (low)
+  // Circle (low)
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
+    <Circle
+      size={size}
+      color={color}
+      fill={color}
+      fillOpacity={0.25}
+      strokeWidth={2}
       aria-hidden="true"
       focusable="false"
       {...props}
-    >
-      <circle cx="8" cy="8" r="6" fill={color} />
-    </svg>
+    />
   );
 }
 
@@ -64,7 +66,6 @@ export default function RiskBadge({ level, score, lang: langProp }) {
   const lang = langProp ?? ctxLang;
   const meta = LEVEL_META[level] ?? LEVEL_META.low;
   const label = levelLabel(level, lang);
-  const isModerate = level === 'moderate';
 
   return (
     <span
@@ -75,7 +76,7 @@ export default function RiskBadge({ level, score, lang: langProp }) {
       }}
       title={`${label}${score != null ? ` (${Math.round(score)})` : ''}`}
     >
-      <LevelIcon level={level} size={14} color={isModerate ? 'var(--ink)' : meta.color} />
+      <LevelIcon level={level} size={12} color={meta.textColor ?? meta.color} />
       <span className="risk-badge__text">{label}</span>
     </span>
   );
@@ -88,22 +89,35 @@ if (typeof document !== 'undefined') {
 .risk-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 6px;
+  gap: 5px;
+  padding: 3px 8px 3px 6px;
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--badge-color) 12%, transparent);
-  border: 1.5px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+  background: color-mix(in srgb, var(--badge-color) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--badge-text-color, var(--badge-color));
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .risk-badge--moderate {
-  background: var(--risk-moderate);
-  border: 1.5px solid var(--risk-moderate);
-  color: var(--ink);
+  background: color-mix(in srgb, var(--risk-moderate) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--risk-moderate) 50%, transparent);
+  color: var(--risk-moderate);
+}
+
+.risk-badge--high {
+  background: color-mix(in srgb, var(--risk-high) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--risk-high) 50%, transparent);
+  color: var(--risk-high);
+}
+
+.risk-badge--low {
+  background: color-mix(in srgb, var(--risk-low) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--risk-low) 45%, transparent);
+  color: var(--risk-low);
 }
 `;
   if (!document.getElementById('risk-badge-styles')) {
@@ -111,4 +125,3 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-

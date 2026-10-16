@@ -15,7 +15,7 @@ import { formatNumber, formatDate } from '../utils/format.js';
 
 /**
  * TrendChart — 60-day rainfall bars with baseline 90th percentile and soil wetness line.
- * Implements Section 8.2 & Task 8.2 using Recharts.
+ * Styled for dark UI with Catalog label, WCAG AA contrast lines, and screen reader summary.
  *
  * @param {{
  *   series: Array,
@@ -66,17 +66,17 @@ export default function TrendChart({ series = [], districtId }) {
       };
     });
 
-      const soilVals = formatted.map(p => p.soil_pct).filter(v => v != null);
-      return {
-        chartData: formatted,
-        p90Value: fallbackP90 != null ? Math.round(fallbackP90 * 10) / 10 : null,
-        maxRain: maxR,
-        peakDay: peak,
-        totalRain: formatted.reduce((acc, p) => acc + (p.rain_mm || 0), 0),
-        minSoil: soilVals.length > 0 ? Math.min(...soilVals) : null,
-        maxSoil: soilVals.length > 0 ? Math.max(...soilVals) : null,
-      };
-    }, [series]);
+    const soilVals = formatted.map(p => p.soil_pct).filter(v => v != null);
+    return {
+      chartData: formatted,
+      p90Value: fallbackP90 != null ? Math.round(fallbackP90 * 10) / 10 : null,
+      maxRain: maxR,
+      peakDay: peak,
+      totalRain: formatted.reduce((acc, p) => acc + (p.rain_mm || 0), 0),
+      minSoil: soilVals.length > 0 ? Math.min(...soilVals) : null,
+      maxSoil: soilVals.length > 0 ? Math.max(...soilVals) : null,
+    };
+  }, [series]);
 
   if (!series || series.length === 0) {
     return (
@@ -97,6 +97,11 @@ export default function TrendChart({ series = [], districtId }) {
   return (
     <div className="trend-chart" role="region" aria-label={t('districtPanel.rainfallTrend', lang)}>
       <div className="trend-chart__header">
+        {/* Catalog label */}
+        <div className="catalog-label trend-chart__catalog-label" aria-hidden="true">
+          <span className="catalog-label__dot" />
+          <span className="catalog-label__mono">Fig. 2 60-day rainfall trend & soil moisture</span>
+        </div>
         <h3 className="trend-chart__title" lang={lang === 'bn' ? 'bn' : undefined}>
           {t('districtPanel.rainfallTrend', lang)}
         </h3>
@@ -134,7 +139,7 @@ export default function TrendChart({ series = [], districtId }) {
               yAxisId="right"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fontSize: 10, fill: '#E65100' }}
+              tick={{ fontSize: 10, fill: '#4ADE80' }}
               tickLine={false}
               axisLine={false}
               unit="%"
@@ -143,7 +148,7 @@ export default function TrendChart({ series = [], districtId }) {
             <Legend
               verticalAlign="top"
               align="right"
-              wrapperStyle={{ fontSize: 11, paddingBottom: 4 }}
+              wrapperStyle={{ fontSize: 11, paddingBottom: 4, color: 'var(--ink-muted)' }}
             />
 
             {/* Baseline 90th percentile reference line */}
@@ -151,35 +156,36 @@ export default function TrendChart({ series = [], districtId }) {
               <ReferenceLine
                 yAxisId="left"
                 y={p90Value}
-                stroke="#D32F2F"
+                stroke="#F87171"
                 strokeDasharray="3 3"
                 strokeWidth={1.5}
                 label={{
                   value: lang === 'bn' ? '৯০তম পারসেন্টাইল' : '90th pctl',
-                  fill: '#D32F2F',
+                  fill: '#F87171',
                   fontSize: 10,
-                  position: 'insideTopLeft',
+                  position: 'insideTopRight',
                 }}
               />
             )}
 
-            {/* Rainfall Bars */}
+            {/* Rainfall bars */}
             <Bar
               yAxisId="left"
               dataKey="rain_mm"
               name={t('districtPanel.rainfall', lang)}
-              fill="var(--nasa-blue, #0B3D91)"
-              radius={[3, 3, 0, 0]}
-              maxBarSize={16}
+              fill="#60A5FA"
+              opacity={0.85}
+              radius={[2, 2, 0, 0]}
+              maxBarSize={8}
             />
 
-            {/* Soil Wetness Line */}
+            {/* Soil wetness line */}
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="soil_pct"
               name={t('districtPanel.soilWetness', lang)}
-              stroke="#E65100"
+              stroke="#4ADE80"
               strokeWidth={2}
               dot={false}
             />
@@ -187,7 +193,7 @@ export default function TrendChart({ series = [], districtId }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Accessible summary text below chart per Section 8.4 & R-019 */}
+      {/* Screen reader summary under chart */}
       <p id="trend-chart-summary" className="trend-chart__summary" lang={lang === 'bn' ? 'bn' : undefined}>
         {summaryText}
       </p>
@@ -198,93 +204,79 @@ export default function TrendChart({ series = [], districtId }) {
 function CustomTooltip({ active, payload, label, lang }) {
   if (!active || !payload || payload.length === 0) return null;
 
-  const data = payload[0].payload;
   return (
     <div className="trend-tooltip">
-      <div className="trend-tooltip__date">
-        {data.date ? formatDate(data.date, lang) : label}
-      </div>
-      <div className="trend-tooltip__item" style={{ color: 'var(--nasa-blue)' }}>
-        <span>{t('districtPanel.rainfall', lang)}:</span>
-        <strong>{formatNumber(data.rain_mm, 1, lang)} mm</strong>
-      </div>
-      {data.soil_pct != null && (
-        <div className="trend-tooltip__item" style={{ color: '#E65100' }}>
-          <span>{t('districtPanel.soilWetness', lang)}:</span>
-          <strong>{formatNumber(data.soil_pct, 0, lang)}%</strong>
-        </div>
-      )}
-      {data.p90 != null && (
-        <div className="trend-tooltip__item" style={{ color: '#D32F2F' }}>
-          <span>{t('districtPanel.pctl90', lang)}:</span>
-          <strong>{formatNumber(data.p90, 1, lang)} mm</strong>
-        </div>
-      )}
+      <p className="trend-tooltip__date">{label}</p>
+      {payload.map((item, index) => (
+        <p key={index} className="trend-tooltip__item" style={{ color: item.color }}>
+          <span>{item.name}: </span>
+          <strong>{formatNumber(item.value, 1, lang)} {item.unit || ''}</strong>
+        </p>
+      ))}
     </div>
   );
 }
 
-/* ─── Styles ───────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+/* ─── Styles ────────────────────────────────────────────────────────── */
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .trend-chart {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  position: relative;
+}
+
+.trend-chart__header {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  background: var(--bg);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
 }
-.trend-chart--empty {
-  min-height: 120px;
-  align-items: center;
-  justify-content: center;
+
+.trend-chart__catalog-label {
+  align-self: flex-start;
+  margin-bottom: 2px;
 }
-.trend-chart__empty-text {
+
+.trend-chart__title {
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.trend-chart__summary {
   font-size: var(--text-xs);
   color: var(--ink-muted);
-}
-.trend-chart__title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-.trend-chart__summary {
-  font-size: 11px;
-  color: var(--ink-muted);
-  margin: 0;
   line-height: 1.4;
-  border-top: 1px dashed var(--border);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
   padding-top: var(--space-2);
 }
 
 .trend-tooltip {
-  background: var(--surface);
+  background: #1C1917;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
 }
 .trend-tooltip__date {
-  font-weight: 700;
-  color: var(--ink);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 2px;
-  margin-bottom: 2px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 4px;
 }
 .trend-tooltip__item {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
+  margin: 2px 0;
 }
 `;
-if (!document.getElementById('trend-chart-styles')) {
-  style.id = 'trend-chart-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('trend-chart-styles')) {
+    style.id = 'trend-chart-styles';
+    document.head.appendChild(style);
+  }
 }

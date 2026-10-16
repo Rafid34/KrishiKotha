@@ -84,7 +84,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
 
   if (!district) {
     return (
-      <div className="district-panel district-panel--empty" role="status">
+      <div className="district-panel district-panel--empty card" role="status">
         <div className="district-panel__empty-icon" aria-hidden="true">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
             <circle cx="24" cy="24" r="22" stroke="var(--border)" strokeWidth="2"/>
@@ -104,7 +104,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
   const districtNameAlt = lang === 'bn' ? district.name_en : district.name_bn;
 
   return (
-    <div className="district-panel" role="region" aria-label={`${district.name_en} risk detail`}>
+    <div className="district-panel card" role="region" aria-label={`${district.name_en} risk detail`}>
       {/* Header */}
       <div className="district-panel__header">
         <div>
@@ -134,7 +134,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
               type="button"
               key={h}
               className={`score-card score-card--${level} ${isSelected ? 'score-card--selected' : ''}`}
-              style={{ '--card-color': level === 'moderate' ? 'var(--risk-moderate-text)' : `var(--risk-${level})` }}
+              style={{ '--card-color': `var(--risk-${level})` }}
               onClick={() => setSelectedHazard(h)}
               aria-pressed={isSelected}
               aria-label={`${hazardLabel(h, lang)}: ${score ?? 'unavailable'}, ${level}`}
@@ -142,7 +142,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
               <span className="score-card__hazard-label" lang={lang === 'bn' ? 'bn' : undefined}>
                 {hazardLabel(h, lang)}
               </span>
-              <span className="score-card__score">
+              <span className="score-card__score score-number">
                 {score != null ? formatNumber(score, 1, lang) : '—'}
               </span>
               <RiskBadge level={level} score={score} lang={lang} />
@@ -203,7 +203,7 @@ export default function DistrictPanel({ district, riskEntry, date }) {
         )}
       </div>
 
-      {/* Disclaimer — required on every screen per Section 8.4 */}
+      {/* Disclaimer — mandatory on every screen per Section 8.4 */}
       <p className="district-panel__disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
         {t('disclaimer', lang)}
       </p>
@@ -212,13 +212,15 @@ export default function DistrictPanel({ district, riskEntry, date }) {
 }
 
 /* ─── Styles ───────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .district-panel {
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: var(--space-4);
+  padding: var(--space-5);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -232,21 +234,24 @@ style.textContent = `
   text-align: center;
   gap: var(--space-4);
   color: var(--ink-muted);
-  min-height: 200px;
+  min-height: 280px;
 }
-.district-panel__empty-icon { opacity: 0.5; }
-.district-panel__empty-text { font-size: var(--text-sm); max-width: 220px; }
+.district-panel__empty-icon { opacity: 0.4; }
+.district-panel__empty-text { font-size: var(--text-sm); max-width: 240px; }
 
 .district-panel__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
 }
 .district-panel__name {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--foreground);
   margin: 0;
 }
 .district-panel__name-alt {
@@ -255,12 +260,14 @@ style.textContent = `
   margin-top: 2px;
 }
 .district-panel__date {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--ink-muted);
   white-space: nowrap;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 2px 10px;
   flex-shrink: 0;
 }
 
@@ -274,39 +281,42 @@ style.textContent = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  background: color-mix(in srgb, var(--card-color) 6%, var(--bg));
-  border: 1.5px solid color-mix(in srgb, var(--card-color) 25%, transparent);
+  gap: 6px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-2);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   font-family: inherit;
 }
 .score-card:hover {
-  border-color: var(--card-color);
-  background: color-mix(in srgb, var(--card-color) 12%, var(--bg));
+  background: #36322F;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 .score-card--selected {
-  border-color: var(--card-color);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--card-color) 40%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
+  background: #2E2A27;
 }
 .score-card:focus-visible {
-  outline: 3px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .score-card__hazard-label {
-  font-size: 11px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .08em;
   color: var(--ink-muted);
 }
 .score-card__score {
+  font-family: var(--font-serif);
   font-size: var(--text-2xl);
-  font-weight: 700;
+  font-weight: 400;
   color: var(--card-color);
   line-height: 1;
 }
@@ -318,11 +328,11 @@ style.textContent = `
 
 /* Advice card */
 .district-advice {
-  background: var(--bg);
+  background: var(--surface-elevated);
   border-radius: var(--radius-md);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--border);
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 .district-advice__header {
   display: flex;
@@ -332,9 +342,10 @@ style.textContent = `
   gap: var(--space-2);
 }
 .district-advice__title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--foreground);
   margin: 0;
 }
 .district-advice__crop-picker {
@@ -347,46 +358,49 @@ style.textContent = `
   color: var(--ink-muted);
 }
 .district-advice__select {
-  font-size: 11px;
-  padding: 2px 6px;
+  font-size: 12px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--ink);
+  color: var(--foreground);
   cursor: pointer;
 }
 .district-advice__select:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
 }
 
 .district-advice__card {
   background: var(--surface);
   border-radius: var(--radius-sm);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 .district-advice__rule-tag code {
-  font-size: 10px;
-  background: color-mix(in srgb, var(--brand) 10%, transparent);
-  color: var(--brand);
-  padding: 2px 5px;
-  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(212, 242, 104, 0.12);
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(212, 242, 104, 0.25);
 }
 .district-advice__bn {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.5;
+  font-size: 18px !important;
+  font-family: var(--font-bangla);
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.6;
   margin: 0;
 }
 .district-advice__en {
   font-size: var(--text-xs);
   color: var(--ink-muted);
   font-style: italic;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
 }
 .district-advice__loading {
@@ -418,7 +432,8 @@ style.textContent = `
   }
 }
 `;
-if (!document.getElementById('district-panel-styles')) {
-  style.id = 'district-panel-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('district-panel-styles')) {
+    style.id = 'district-panel-styles';
+    document.head.appendChild(style);
+  }
 }

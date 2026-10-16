@@ -3,6 +3,7 @@ import RiskMap from '../components/RiskMap.jsx';
 import HazardToggle from '../components/HazardToggle.jsx';
 import DistrictPanel from '../components/DistrictPanel.jsx';
 import DataFreshness from '../components/DataFreshness.jsx';
+import SerratedDivider from '../components/SerratedDivider.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 import { getDistricts, getRisk } from '../api/client.js';
 
@@ -71,7 +72,6 @@ export default function Dashboard({ initialDate = '', initialDistrictError = nul
     : null;
 
   // Sources come from the first riskData entry's sources field
-  // (they're the same for all districts on a given date)
   const sources = riskResponse?.districts?.[0]?.sources ?? null;
 
   return (
@@ -79,15 +79,22 @@ export default function Dashboard({ initialDate = '', initialDistrictError = nul
       {/* Controls bar */}
       <div className="dashboard__controls">
         <div className="dashboard__controls-inner">
-          <h1 className="dashboard__title" lang={lang === 'bn' ? 'bn' : undefined}>
-            {t('dashboard.title', lang)}
-          </h1>
+          <div className="dashboard__title-row">
+            <h1 className="dashboard__title" lang={lang === 'bn' ? 'bn' : undefined}>
+              {t('dashboard.title', lang)}
+            </h1>
+
+            {/* Mandatory advisory disclaimer shown at all times */}
+            <p className="dashboard__disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
+              {t('disclaimer', lang)}
+            </p>
+          </div>
 
           <div className="dashboard__control-row">
-            {/* Hazard toggle (native radios per spec §8.4) */}
+            {/* Hazard toggle (folder-style tabs, native radio group per spec §8.4) */}
             <HazardToggle value={hazard} onChange={handleHazardChange} />
 
-            {/* Date picker */}
+            {/* Date picker & quick-pick demo button */}
             <div className="dashboard__date-picker">
               <label
                 htmlFor="risk-date-input"
@@ -115,17 +122,15 @@ export default function Dashboard({ initialDate = '', initialDistrictError = nul
                 {lang === 'bn' ? 'জুন ২০২২ বন্যা ডেমো' : 'June 2022 flood demo'}
               </button>
             </div>
+
+            {/* Data freshness callout (Sticky note styled) */}
+            {sources && <DataFreshness sources={sources} />}
           </div>
-
-          {/* Data freshness strip */}
-          {sources && <DataFreshness sources={sources} />}
-
-          {/* Mandatory advisory disclaimer shown at all times */}
-          <p className="dashboard__disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
-            {t('disclaimer', lang)}
-          </p>
         </div>
       </div>
+
+      {/* Serrated edge divider between controls and main map body */}
+      <SerratedDivider className="dashboard__divider" />
 
       {/* Main content: map + panel */}
       <div className="dashboard__body">
@@ -182,94 +187,133 @@ export default function Dashboard({ initialDate = '', initialDistrictError = nul
 }
 
 /* ─── Styles ────────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .dashboard {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 /* Controls bar */
 .dashboard__controls {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: var(--space-4) 0;
+  padding: var(--space-4) 0 var(--space-3) 0;
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 .dashboard__controls-inner {
-  max-width: 1280px;
+  max-width: 1360px;
   margin: 0 auto;
   padding: 0 var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-.dashboard__title {
-  font-size: var(--text-xl);
-  color: var(--brand);
-  font-weight: 700;
+
+.dashboard__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
+
+.dashboard__title {
+  font-family: var(--font-serif);
+  font-size: var(--text-3xl);
+  color: var(--foreground);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
 .dashboard__disclaimer {
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--ink-muted);
   margin: 0;
   line-height: 1.4;
 }
+
 .dashboard__control-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-5);
+  justify-content: space-between;
+  gap: var(--space-4);
 }
+
 .dashboard__date-picker {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 .dashboard__date-label {
-  font-size: var(--text-sm);
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
   color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 .dashboard__date-input {
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--ink);
-  background: var(--bg);
+  color: var(--foreground);
+  background: var(--surface-elevated);
   min-height: 44px;
   cursor: pointer;
   transition: border-color var(--transition);
 }
 .dashboard__date-input:hover,
 .dashboard__date-input:focus {
-  border-color: var(--brand);
+  border-color: var(--accent);
   outline: none;
 }
 .dashboard__date-input:focus-visible {
-  outline: 3px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
 .dashboard__demo-pick-btn {
-  padding: 4px 10px;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
+  padding: 0 var(--space-4);
+  background: rgba(212, 242, 104, 0.12);
+  border: 1px solid rgba(212, 242, 104, 0.35);
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
-  font-weight: 500;
-  color: var(--ink);
+  font-weight: 600;
+  color: var(--accent);
   min-height: 44px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--transition), border-color var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 .dashboard__demo-pick-btn:hover {
-  background: var(--surface-alt);
-  border-color: var(--brand);
+  background: rgba(212, 242, 104, 0.22);
+  transform: translateY(-1px);
+}
+.dashboard__demo-pick-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Serrated divider under controls */
+.dashboard__divider {
+  margin: 0;
+  background: var(--surface);
 }
 
 /* Body: map + panel */
@@ -277,8 +321,8 @@ style.textContent = `
   flex: 1;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(340px, 55vh) auto;
-  max-width: 1280px;
+  grid-template-rows: minmax(360px, 55vh) auto;
+  max-width: 1360px;
   width: 100%;
   margin: 0 auto;
   padding: var(--space-4);
@@ -286,19 +330,21 @@ style.textContent = `
   overflow-y: auto;
 }
 
-/* >=1024px: side-by-side, 65/35 split */
+/* >=1024px: 65/35 split */
 @media (min-width: 1024px) {
   .dashboard__body {
     grid-template-columns: 65fr 35fr;
     grid-template-rows: 1fr;
-    height: calc(100dvh - 56px - 120px); /* Viewport minus header minus controls */
+    height: calc(100dvh - 64px - 140px);
     overflow: hidden;
   }
   .dashboard__map-col {
     overflow: hidden;
+    height: 100%;
   }
   .dashboard__panel-col {
     overflow-y: auto;
+    height: 100%;
   }
 }
 
@@ -313,17 +359,17 @@ style.textContent = `
 .dashboard__no-data {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  background: rgba(247,246,241,0.85);
+  background: rgba(12, 10, 9, 0.85);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
-  color: var(--ink-muted);
-  backdrop-filter: blur(2px);
+  color: var(--foreground);
+  backdrop-filter: blur(4px);
 }
 .dashboard__error {
   color: var(--risk-high);
@@ -333,9 +379,9 @@ style.textContent = `
   inset: auto;
   z-index: 5;
   padding: var(--space-2) var(--space-4);
-  background: #FEE2E2;
-  border: 1px solid #F87171;
-  color: #B91C1C;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: var(--risk-high);
   border-radius: var(--radius-md);
   flex-direction: row;
   justify-content: space-between;
@@ -346,24 +392,22 @@ style.textContent = `
   color: var(--ink-muted);
 }
 .dashboard__retry-btn {
-  padding: 4px 12px;
-  background: var(--brand);
-  color: #fff;
+  padding: 0 var(--space-4);
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 600;
+  min-height: 44px;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition-fast);
 }
 .dashboard__retry-btn:hover {
   background: var(--brand-dark);
 }
 
-@media (max-width: 480px) {
-  .dashboard__controls {
-    padding: var(--space-3) 0;
-  }
+@media (max-width: 640px) {
   .dashboard__controls-inner {
     padding: 0 var(--space-3);
     gap: var(--space-2);
@@ -373,10 +417,10 @@ style.textContent = `
     gap: var(--space-3);
   }
   .dashboard__title {
-    font-size: var(--text-lg);
+    font-size: var(--text-2xl);
   }
   .dashboard__control-row {
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 }
 
@@ -390,8 +434,8 @@ style.textContent = `
   }
 }
 `;
-if (!document.getElementById('dashboard-styles')) {
-  style.id = 'dashboard-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('dashboard-styles')) {
+    style.id = 'dashboard-styles';
+    document.head.appendChild(style);
+  }
 }
-

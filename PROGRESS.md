@@ -519,3 +519,10 @@ Deviations from DESIGN_REFERENCE.json logged per user instructions and precedenc
   - *Top Bar & Pill Navigation*: Implemented fixed glassmorphism header with 8px blur, stone black surface (`rgba(12,10,9,0.85)`), pill-shaped navigation container with 300ms transition to off-white background / stone black text for active links, language toggle, and an Acid Lime (`#D4F268`) primary CTA button.
   - *Mobile Responsive Accommodation (360px)*: On screens below 640px, the brand text collapses to the circular logo and the primary CTA tucks into the compact view to guarantee zero horizontal scroll and touch targets >= 44px.
   - *Serrated Dividers*: Created procedural `SerratedDivider` using `radial-gradient` mask for section transitions, marked `aria-hidden="true"`.
+
+- **T3: Dashboard, Map, Tabs & Panel**:
+  - *Folder-Style Hazard Tabs*: Implemented folder-tab aesthetics with the active tab larger and Acid Lime accented. As required by Section 8.4 and prompt instructions, slight decorative rotation (-2 to -1 deg) is removed on viewports < 640px and under `prefers-reduced-motion: reduce`. Native radio group semantics and arrow-key keyboard navigation remain untouched.
+  - *Map Basemap & Equal-Sized Dark Pill Markers*: CartoDB Dark Matter basemap integrated for high dark-mode legibility. Markers are rendered with identical radii (16px), accompanied by permanent solid dark pill tooltips (`#1C1917`) ensuring WCAG AA contrast for text and scores across any tile. Lucide monochrome line icons accompany all risk badges and legend rows.
+  - *Catalog Labels*: Positioned technical mono catalog labels with Acid Lime status dots on the map (`Fig. 1`) and TrendChart (`Fig. 2`). The status dots are decorative and never the sole carrier of meaning.
+  - *Sticky Note Callout*: Non-critical Data Freshness note formatted as a Sticky Note card (`#D4F268` fill, `#1C1917` text, 1deg desktop rotation). The mandatory disclaimer remains strictly on the dark surface with high contrast and zero rotation.
+  - *District Detail & Factor Bars*: 24px rounded card surfaces, Newsreader serif score values, and modern progress bars with high-contrast text and labels.

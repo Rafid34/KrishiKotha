@@ -4,8 +4,8 @@ import { LevelIcon } from './RiskBadge.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 
 /**
- * Legend — shows the three risk levels with colour, icon and label.
- * Placed in the bottom-left corner of the map.
+ * Legend — shows the three risk levels with colour, Lucide line icon and label.
+ * Placed in the bottom-left corner of the map with dark glass styling.
  */
 export default function Legend() {
   const { lang } = useLang();
@@ -29,26 +29,30 @@ export default function Legend() {
 const style = document.createElement('style');
 style.textContent = `
 .legend {
-  background: var(--surface);
+  background: rgba(28, 25, 24, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   padding: var(--space-3) var(--space-4);
-  min-width: 110px;
+  min-width: 120px;
   pointer-events: none;
 }
 .legend__title {
-  font-size: var(--text-xs);
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
   color: var(--ink-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   margin-bottom: var(--space-2);
 }
 .legend__row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 .legend__row:last-child { margin-bottom: 0; }
 `;
@@ -56,4 +60,3 @@ if (!document.getElementById('legend-styles')) {
   style.id = 'legend-styles';
   document.head.appendChild(style);
 }
-
