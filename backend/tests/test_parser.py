@@ -26,6 +26,11 @@ from backend.app.services.messaging.parser import parse_message
         ("চট্টগ্রাম আমন", "chattogram", "aman"),
         ("sunamganj boro", "sunamganj", "boro"),
         ("সুনামগঞ্জ আমন ধান", "sunamganj", "aman"),
+        ("Sylhet-Aman", "sylhet", "aman"),
+        ("sylhet,aman", "sylhet", "aman"),
+        ("SYLHET/AMAN", "sylhet", "aman"),
+        ("সিলেট-আমন", "sylhet", "aman"),
+        ("sylhet_aman", "sylhet", "aman"),
     ],
 )
 def test_parse_district_and_crop(raw_input: str, expected_district: str, expected_crop: str):

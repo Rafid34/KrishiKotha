@@ -485,6 +485,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-013: NOT REPRODUCED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_indicators.py -k test_circular_day_of_year_window`
 - R-015: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_static_vs_spec.py`
 - R-014: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_cmr.py`
+- R-016: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_parser.py`
 
 
 

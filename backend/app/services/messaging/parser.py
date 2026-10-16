@@ -67,21 +67,24 @@ def parse_message(raw_text: str | None) -> ParsedMessage:
     normalized = unicodedata.normalize("NFC", raw_text.strip())
     lower_text = normalized.lower()
 
-    if not lower_text:
+    # Treat '-', '_', ',', and '/' like whitespace
+    delimited = lower_text.translate(str.maketrans("-_,/", "    ")).strip()
+
+    if not delimited:
         return ParsedMessage(command="unknown", raw_text=raw_text)
 
     # Command matches
-    if lower_text in COMMANDS_HELP:
+    if delimited in COMMANDS_HELP:
         return ParsedMessage(command="help", raw_text=raw_text)
-    if lower_text in COMMANDS_STOP:
+    if delimited in COMMANDS_STOP:
         return ParsedMessage(command="stop", raw_text=raw_text)
-    if lower_text in FEEDBACK_1:
+    if delimited in FEEDBACK_1:
         return ParsedMessage(command="feedback", feedback_value=1, raw_text=raw_text)
-    if lower_text in FEEDBACK_2:
+    if delimited in FEEDBACK_2:
         return ParsedMessage(command="feedback", feedback_value=2, raw_text=raw_text)
 
     # Clean tokens: ignore common filler words like "ধান" (rice)
-    raw_tokens = lower_text.split()
+    raw_tokens = delimited.split()
     tokens = [t for t in raw_tokens if t not in ("ধান", "rice")]
 
     found_district: str | None = None
