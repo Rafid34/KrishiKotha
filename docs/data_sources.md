@@ -131,3 +131,12 @@ Both products capture the June 2022 deluge in Sylhet and moderate precipitation 
 
 In the 2022 event run, one NDVI composite is applied to all scored days, so 2022 salinity may use an NDVI dated after the scored day; flood and drought are unaffected.
 
+## Methodological Assumptions
+
+The following assumptions underpin data ingestion, spatial sampling, and hazard indicator calculations:
+
+1. **Centroid-Box Spatial Approximation:** Precipitation for each district is calculated as the unweighted mean of 0.1° IMERG grid cells within a 0.5° bounding box centered at the district centroid, and soil moisture is sampled from the single nearest 9 km grid cell (SMAP) or centroid coordinate (POWER). This assumes that centroid-centered samples provide an adequate proxy for administrative district conditions without polygon area-weighting. (Marked as an **ASSUMPTION**).
+2. **SMAP to POWER Fallback Equivalence:** When SMAP L4 `sm_rootzone_pctl` is unavailable or masked (e.g., over water cells in Sunamganj, Khulna, Barishal), the system falls back to NASA POWER `GWETROOT` ranked against a 20-year empirical baseline. This assumes that the percentile-ranked POWER proxy provides hydrological continuity with the satellite-derived SMAP percentile. (Marked as an **ASSUMPTION**).
+3. **Geometric Coastal Distance Salinity Metric:** Salinity vulnerability is scaled using static Euclidean distance from the district centroid to the Bay of Bengal coastline (`districts.json`), clamped to zero at 150 km. This is a heuristic geometric assumption rather than a dynamic estuarine dispersion model. (Marked as an **ASSUMPTION**).
+4. **Fixed Lookback Window (30 Days):** All hazard engines assume that 3-day, 7-day, and 30-day cumulative precipitation and temperature lookbacks adequately capture flash flood antecedent moisture, drought deficit, and salinity flushing dynamics across diverse soil types. (Marked as an **ASSUMPTION**).
+

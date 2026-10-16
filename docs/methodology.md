@@ -321,5 +321,31 @@ Traced from `/api/risk/sylhet/explain?date=2022-06-16` to NASA files and upstrea
 2. **SMAP raw granule ephemeral lifecycle:** To prevent excessive local disk consumption, raw SPL4SMGP HDF5 granules are downloaded, sampled at district centroids into `data/cache/smap/{YYYYMMDD}.json`, and then immediately deleted. The exact granule identifier (`SMAP_L4_SM_gph_20220616T060000_Vv8011_001.h5`) is therefore traceable via Earthdata CMR query parameters (product `SPL4SMGP`, version `008`, temporal window `04:30–07:30 UTC`), but the raw granule is not preserved on disk.
 3. **POWER request logging:** `PipelineRun.detail.sources.POWER.request_example` records a single illustrative parameter dictionary (for Barishal centroid) rather than persisting every per-district HTTP request string individually.
 
+### Explicit Methodological Assumptions
+
+The following factual and heuristic claims embedded in the methodology lack measured empirical observations or authoritative external citations and are explicitly documented as **assumptions**:
+
+1. **Reference Flood Onset Date (2022-06-16):**
+   * *Claim:* The catastrophic flood onset in Sylhet occurred on `2022-06-16`.
+   * *Status:* **ASSUMPTION**. While contemporaneous humanitarian reports (UN RC Situation Update #1 on ReliefWeb) document record upstream rainfall at Cherrapunji on 16 June and escalating inundation across Sylhet on 16–17 June (triggering airport closure and power outages), assigning a single exact date of 16 June as the official benchmark onset is an operational assumption because the primary government report (FFWC Annual Flood Report 2022 Section 4) could not be retrieved from `ffwc.gov.bd` and remains unverified.
+2. **False Alarm Evaluation Window (2022-07-01 to 2022-09-30):**
+   * *Claim:* Any High flood day occurring after 30 June up to 30 September represents a "false alarm".
+   * *Status:* **ASSUMPTION**. The project specification does not define the official start or end dates of the 2022 monsoon flood season. Counting subsequent High flood alerts as false alarms is a chosen convention; these alerts may reflect actual secondary flood pulses in the Meghna basin.
+3. **Seasonal Salinity Intrusion Calendar (Section 7.6):**
+   * *Claim:* Baseline estuarine salinity intrusion follows a monthly index peaking in April (Jan 3, Feb 4, Mar 8, Apr 10, May 6, Jun 4, Jul 3, Aug 2, Sep 1, Oct 1, Nov 2, Dec 3).
+   * *Status:* **ASSUMPTION**. This calendar lookup reflects generalized dry-season hydrological patterns in southwestern coastal Bangladesh rather than continuous in-situ salinity measurements or hydrodynamic tidal models.
+4. **Coastal Proximity Threshold (150 km):**
+   * *Claim:* Salinity risk is clamped to 0 for districts with coastal distance $\ge 150\text{ km}$.
+   * *Status:* **ASSUMPTION**. This is a geometric heuristic assumption designed to prevent inland districts from triggering salinity alerts; it is not derived from geological or groundwater surveys.
+5. **Crop Growth Stage Calendars and Off-Season Sensitivity:**
+   * *Claim:* Aman, Boro, and Aus rice growth stages strictly follow the calendar months declared in `crops.json`, with a uniform 0.7 sensitivity multiplier during the off-season.
+   * *Status:* **ASSUMPTION**. These definitions represent generalized regional agronomic approximations rather than satellite-observed phenological crop stages.
+6. **District Rainfall Spatial Sampling Box ($\pm 0.25^\circ$):**
+   * *Claim:* An unweighted mean of 0.1° IMERG cells within a $0.5^\circ \times 0.5^\circ$ box around the district centroid represents the district's average rainfall.
+   * *Status:* **ASSUMPTION**. This assumes spatial uniformity within the centroid box and approximates administrative boundaries without polygon area-weighting.
+7. **Single-Cell Soil Moisture Extraction:**
+   * *Claim:* Soil moisture from the single nearest 9 km EASE-Grid 2.0 cell (SMAP L4) or centroid point (POWER) represents district-wide soil saturation.
+   * *Status:* **ASSUMPTION**. Heterogeneous soils and localized drainage differences are approximated by a single centroid-adjacent value.
+
 
 
