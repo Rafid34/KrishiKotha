@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pytest
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -387,5 +389,17 @@ def test_sim_sms_roundtrip(client: TestClient, loaded: sessionmaker[Session]) ->
     assert len(date_data["replies"]) == 2
     assert "স্বাগতম" in date_data["replies"][0]["text"]
     assert "বন্যার ঝুঁকি বেশি" in date_data["replies"][1]["text"]
+
+
+def test_layers_endpoint(client: TestClient) -> None:
+    resp = client.get("/api/layers")
+    assert resp.status_code == 200
+    layers = resp.json()
+    assert len(layers) >= 3
+    layers_js = Path("frontend/src/config/layers.js").read_text(encoding="utf-8")
+    for layer in layers:
+        assert layer["id"] in layers_js
+        assert layer["tile_matrix_set"] in layers_js
+
 
 

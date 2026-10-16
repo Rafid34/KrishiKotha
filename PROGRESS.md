@@ -464,6 +464,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
   - Added NASA GIBS to dataset list in `/api/sources` as a map overlay source (`last_data_date: None`).
   - Updated `scripts/verify_offline.py` to exempt overlay-only GIBS from the numerical observation date check.
   - Re-exported `data/snapshots/latest_30d.json` (672 KB) and `data/snapshots/sylhet_2022.json` (1148 KB).
+  - Frontend keeps its own copy of GIBS layer definitions in `frontend/src/config/layers.js` (R-001).
 - **Not done:**
   - Phase 13 (deployment, packaging, final polish) not started.
 
@@ -477,3 +478,5 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-018: FIXED, `cd frontend; npm test -- src/__tests__/default_date.test.jsx` (demo script must press the "June 2022 flood demo" button)
 - censored-lead-time (F7): FIXED, `cd frontend; npm test -- src/__tests__/censored_lead_time.test.jsx`
 - R-012: NOT REPRODUCED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_pipeline.py -k test_main_exit_codes`
+- R-001: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_api.py -k test_layers_endpoint`
+

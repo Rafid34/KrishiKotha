@@ -9,8 +9,9 @@ from ..config import VERSION, get_settings
 from ..db import get_db
 from ..errors import not_found
 from ..models import Observation, PipelineRun
-from ..schemas import HealthOut, PipelineStatusOut, SourceOut
+from ..schemas import HealthOut, LayerOut, PipelineStatusOut, SourceOut
 from ..services.risk.scoring import SCORING_CONSTANTS
+
 from ..timeutil import iso_utc
 
 router = APIRouter(prefix="/api", tags=["meta"])
@@ -124,3 +125,35 @@ def pipeline_status(db: Session = Depends(get_db)) -> dict[str, object]:
         "status": run.status,
         "detail": run.detail or {},
     }
+
+
+GIBS_LAYERS: tuple[dict[str, str], ...] = (
+    {
+        "id": "IMERG_Precipitation_Rate",
+        "title": "NASA IMERG precipitation rate",
+        "tile_matrix_set": "GoogleMapsCompatible_Level6",
+        "format": "png",
+        "coverage_start": "2000-06-01",
+    },
+    {
+        "id": "MODIS_Terra_L3_NDVI_16Day",
+        "title": "MODIS Terra NDVI (16-day)",
+        "tile_matrix_set": "GoogleMapsCompatible_Level9",
+        "format": "png",
+        "coverage_start": "2000-03-05",
+    },
+    {
+        "id": "MODIS_Terra_NDVI_8Day",
+        "title": "MODIS Terra NDVI (rolling 8-day)",
+        "tile_matrix_set": "GoogleMapsCompatible_Level9",
+        "format": "png",
+        "coverage_start": "2025-02-12",
+    },
+)
+
+
+@router.get("/layers", response_model=list[LayerOut])
+def layers() -> list[dict[str, str]]:
+    """GIBS layer definitions for map overlays (Section 7.2)."""
+    return [dict(layer) for layer in GIBS_LAYERS]
+

@@ -216,3 +216,12 @@ class BacktestOut(BaseModel):
     steps: list[ReplayStep]
     citation: str | None = None
 
+
+class LayerOut(BaseModel):
+    id: str
+    title: str
+    tile_matrix_set: str
+    format: str
+    coverage_start: str
+
+
