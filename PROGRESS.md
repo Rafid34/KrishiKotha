@@ -503,6 +503,13 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - `verify_endpoints.py`: all checks (a-f) passed (POWER daily point, CMR IMERG granule count, earthaccess login, IMERG netcdf4 dataset read, GIBS layer identifiers, CMR SMAP SPL4SMGP latest granule).
 - 3-day live pipeline smoke test (2026-10-12 to 2026-10-14, late run): `Pipeline ok: 24 snapshots, IMERG ok (last 2026-10-14), POWER ok (last 2026-10-12)`. Confirmed `SELECT COUNT(*) FROM risk_snapshots` = 24 in `data/cache/smoke.db`. Scratch database deleted.
 
+## Restyle
 
+Deviations from DESIGN_REFERENCE.json logged per user instructions and precedence rules:
 
-
+- **T1: Tokens & Typography**:
+  - *Risk Colours (Precedence Rule 1)*: DESIGN_REFERENCE.json uses Acid Lime (`#D4F268`) for critical status markers. Lime was strictly avoided for all risk levels to prevent misleading users into perceiving high risk as "low risk". Instead, Section 8.4 hues for Low, Moderate, and High were maintained and adjusted to lighter tints (`#4ADE80`, `#FBBF24`, `#F87171`) to guarantee WCAG AA contrast (>= 4.5:1 text, >= 3.0:1 components) on dark surfaces (`#0C0A09`, `#1C1917`, `#292524`). Acid Lime (`#D4F268`) is reserved exclusively for primary actions, selection states, links, and focus indicators.
+  - *Heading Weights (Precedence Rule 2)*: DESIGN_REFERENCE.json specifies light heading weights (200 to 300). Weight 200 was rejected to maintain legibility. Weight 300 is used exclusively for English headings at 28px or larger; headings smaller than 28px use weight 400.
+  - *Bangla Typography (Precedence Rule 3)*: Newsreader and Instrument Sans do not include Bengali glyphs. Self-hosted Noto Serif Bengali (headings, weight 600) and Noto Sans Bengali (body, weight 400+) were adopted. All italics and letter-spacing are removed for Bangla text. Bangla body text is enforced at >= 18px with line-height >= 1.6. Italic emphasis is applied to English only.
+  - *Pure Black Prohibition*: Adhered to the reference rule never to use pure black (`#000000`), using the warm stone black (`#0C0A09`) throughout.
+  - *Grid Pattern Isolation*: The 40px background grid pattern at 3% opacity is applied strictly to the main viewport body background, never behind text-heavy panels or cards.
