@@ -151,3 +151,44 @@ def test_write_into_replaces_only_the_marked_block(tmp_path) -> None:
     doc.write_text("no markers", encoding="utf-8")
     with pytest.raises(SystemExit):
         v.write_into(doc, "x")
+
+
+def test_negative_control_metrics() -> None:
+    sylhet_data = [
+        (date(2022, 1, 5), 80.0, "high"),
+        (date(2022, 1, 6), 85.0, "high"),
+        (date(2022, 2, 10), 75.0, "high"),
+        (date(2022, 6, 15), 95.0, "high"),
+        (date(2022, 12, 20), 72.0, "high"),
+    ]
+    sunamganj_data = [
+        (date(2022, 1, 1), 75.0, "high"),
+        (date(2022, 12, 5), 80.0, "high"),
+    ]
+    rangpur_data = [
+        (date(2022, 2, 1), 70.0, "high"),
+    ]
+
+    ctrl = v.negative_control({
+        "sylhet": sylhet_data,
+        "sunamganj": sunamganj_data,
+        "rangpur": rangpur_data,
+    })
+
+    assert ctrl["winter_counts"]["sylhet"] == {"dec": 1, "jan": 2, "feb": 1, "total": 4}
+    assert ctrl["winter_counts"]["sunamganj"] == {"dec": 1, "jan": 1, "feb": 0, "total": 2}
+    assert ctrl["winter_counts"]["rangpur"] == {"dec": 0, "jan": 0, "feb": 1, "total": 1}
+
+    assert ctrl["sylhet_high_total"] == 5
+    assert ctrl["sylhet_monthly"][1] == {"count": 2, "share": 40.0}
+    assert ctrl["sylhet_monthly"][2] == {"count": 1, "share": 20.0}
+    assert ctrl["sylhet_monthly"][6] == {"count": 1, "share": 20.0}
+    assert ctrl["sylhet_monthly"][12] == {"count": 1, "share": 20.0}
+    assert ctrl["sylhet_monthly"][3] == {"count": 0, "share": 0.0}
+
+    block = v._negative_control_block(ctrl)
+    text = "\n".join(block)
+    assert "### 4. Negative control: dry-season flood alerts" in text
+    assert "| Sylhet | 1 | 2 | 1 | 4 |" in text
+    assert "| Sunamganj | 1 | 1 | 0 | 2 |" in text
+    assert "| Rangpur | 0 | 0 | 1 | 1 |" in text

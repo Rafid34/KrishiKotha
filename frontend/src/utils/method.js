@@ -8,6 +8,8 @@ import { formatDate } from './format.js';
  */
 export function formatFloodFormula(constants) {
   const f = constants?.flood || {};
+  const prep = constants?.preprocessing || {};
+  const wetDay = prep.wet_day_mm ?? 1.0;
   const wRain3 = f.weight_rain3 ?? 0.40;
   const wRain7 = f.weight_rain7 ?? 0.35;
   const wSoil = f.weight_soil ?? 0.25;
@@ -20,6 +22,9 @@ export function formatFloodFormula(constants) {
     `  f_rain3 = percentile_rank(3-day accumulated rainfall vs baseline) × 100`,
     `  f_rain7 = percentile_rank(7-day accumulated rainfall vs baseline) × 100`,
     `  f_soil  = soil moisture percentile (SMAP L4 root zone or POWER GWETROOT fallback)`,
+    ``,
+    `Preprocessing:`,
+    `  - Wet-day threshold: ${wetDay} mm/day (daily rain < ${wetDay} mm set to 0 in baseline and live data)`,
     ``,
     `Weights:`,
     `  - 3-day rainfall (f_rain3): ${wRain3}`,

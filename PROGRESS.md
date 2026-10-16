@@ -449,9 +449,9 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - **Seasonality checks (2022 full year, all 8 districts):**
   - Flood score for Sylhet peaks between June and September: **PASS** (peak June, mean 78.7)
   - Flood score for Sunamganj peaks between June and September: **PASS** (peak June, mean 83.5)
-  - Drought score for Rajshahi is higher in March and April than in July: **FAIL** (Mar 26.1, Apr 64.5, Jul 76.4; northwestern dry spell / heat anomaly in July 2022)
-  - Salinity score for Satkhira is higher in March to May than in August: **PASS** (Mar 79.4, Apr 92.0, May 52.2, Aug 28.2)
-  - Salinity score for Khulna is higher in March to May than in August: **PASS** (Mar 64.2, Apr 68.9, May 39.0, Aug 17.5)
+  - Drought score for Rajshahi is higher in March and April than in July: **FAIL** (Mar 26.6, Apr 64.5, Jul 77.0; northwestern dry spell / heat anomaly in July 2022)
+  - Salinity score for Satkhira is higher in March to May than in August: **PASS** (Mar 80.1, Apr 92.1, May 52.3, Aug 28.3)
+  - Salinity score for Khulna is higher in March to May than in August: **PASS** (Mar 64.2, Apr 68.9, May 39.0, Aug 17.6)
   - Salinity score for Rajshahi stays below 20 in every month: **PASS** (highest daily score 0.0 in January)
 - **Cross-product consistency (June 2022, 30 days):**
   - Sylhet: Pearson $r = 0.652$, mean absolute difference 22.94 mm/day, mean IMERG minus POWER -6.73 mm/day, IMERG total 1352.0 mm, POWER total 1554.0 mm
@@ -463,7 +463,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
   - Added `/api/scoring` endpoint reflecting live constants from `scoring.py` so UI formulas dynamically match the scoring engine without duplication.
   - Added NASA GIBS to dataset list in `/api/sources` as a map overlay source (`last_data_date: None`).
   - Updated `scripts/verify_offline.py` to exempt overlay-only GIBS from the numerical observation date check.
-  - Re-exported `data/snapshots/latest_30d.json` (672 KB) and `data/snapshots/sylhet_2022.json` (1148 KB).
+  - Re-exported `data/snapshots/latest_30d.json` (672 KB) and `data/snapshots/sylhet_2022.json` (1287 KB).
   - Frontend keeps its own copy of GIBS layer definitions in `frontend/src/config/layers.js` (R-001).
 - **Not done:**
   - Phase 13 (deployment, packaging, final polish) not started.
@@ -488,6 +488,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-016: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_parser.py`
 - R-011: FIXED, `cd frontend; npm audit --omit=dev`
 - Section-10.2: FIXED, `.\.venv\Scripts\python.exe scripts\verify_endpoints.py` and `.\.venv\Scripts\python.exe -m pipeline.run_pipeline --start 2026-10-12 --end 2026-10-14 --run late` (24 rows in scratch database, status ok)
+- R-008, R-023: FIXED, `.\.venv\Scripts\python.exe -m pipeline.validate report` (Option A wet-day threshold 1.0 mm applied identically to POWER baseline and live IMERG; Sylhet January flood score 58.6; winter High days cut by 50% from 36 to 18; lead time 32 days preserved)
 
 ### Section 10.2 Live Checks & Pipeline Integration Evidence
 - `verify_endpoints.py`: all checks (a-f) passed (POWER daily point, CMR IMERG granule count, earthaccess login, IMERG netcdf4 dataset read, GIBS layer identifiers, CMR SMAP SPL4SMGP latest granule).

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from ...config import BASELINE_DIR
 from ...models import Baseline
 from .indicators import rolling_sum
+from .scoring import WET_DAY_MM, apply_wet_day_threshold
 
 WINDOW_DAYS = 15
 DOY_COUNT = 366
@@ -34,7 +35,7 @@ def compute_baseline(frame: pd.DataFrame, window: int = WINDOW_DAYS) -> dict[int
     (circular). Returns `{doy: {rain3_sorted, rain7_sorted, rain30_mean, tmax_mean, soil_sorted}}`.
     """
     full = frame.reindex(pd.date_range(frame.index.min(), frame.index.max(), freq="D"))
-    rain = full["PRECTOTCORR"]
+    rain = full["PRECTOTCORR"].apply(lambda v: 0.0 if (pd.isna(v) or v < WET_DAY_MM) else float(v))
     rain3 = rolling_sum(rain, 3).to_numpy()
     rain7 = rolling_sum(rain, 7).to_numpy()
     rain30 = rolling_sum(rain, 30).to_numpy()

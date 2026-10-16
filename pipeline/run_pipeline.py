@@ -30,7 +30,12 @@ from backend.app.services.nasa import imerg, modis, smap
 
 from backend.app.services.nasa.power import build_params, fetch_power
 from backend.app.services.risk.baseline import baseline_path, load_baseline
-from backend.app.services.risk.scoring import score_drought, score_flood, score_salt
+from backend.app.services.risk.scoring import (
+    apply_wet_day_threshold,
+    score_drought,
+    score_flood,
+    score_salt,
+)
 from backend.app.services.snapshots import load_snapshots
 
 FETCH_ATTEMPTS = 3
@@ -432,6 +437,7 @@ def run_pipeline(
                 stats.power_last_date = max(stats.power_last_date or power.soil_date, power.soil_date)
                 stats.soil_stale_max = max(stats.soil_stale_max, power.soil_stale_days or 0)
             daily_rain = rain_by_district[did]
+            wet_rain = {d: apply_wet_day_threshold(v) for d, v in daily_rain.items()}
             smap_soil = soil_by_district[did].get(day)
             put_obs(did, day, RUN_SOURCE[run], "precip_mm", daily_rain.get(day), IMERG_VERSION)
             put_obs(did, day, "POWER", "tmax_c", power.today_tmax, POWER_VERSION)
@@ -440,7 +446,7 @@ def run_pipeline(
             if ndvi_raw is not None:
                 put_obs(did, day, "MODIS_MOD13Q1", "ndvi", ndvi_raw, (ndvi_product or "").split(".")[-1])
 
-            sums = rain_sums(daily_rain, day)
+            sums = rain_sums(wet_rain, day)
             if any(v is None for v in sums.values()):
                 stats.skipped.append(f"{did} {day}: incomplete IMERG window")
                 continue

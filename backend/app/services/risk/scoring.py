@@ -46,11 +46,25 @@ SALT_NDVI_SCALE: float = 0.10  # -0.10 anomaly scores 100
 WEIGHT_SALT_SEASON_WITHOUT_NDVI: float = 0.55
 WEIGHT_SALT_DRY_WITHOUT_NDVI: float = 0.45
 
+# Wet-day threshold (Section 7.6)
+WET_DAY_MM: float = 1.0
+
+
+def apply_wet_day_threshold(value: float | None) -> float | None:
+    """Set daily rainfall below WET_DAY_MM to 0.0; preserves None."""
+    if value is None:
+        return None
+    return 0.0 if value < WET_DAY_MM else float(value)
+
+
 # Named dictionary of all constants echoed by /api/sources (Section 7.6)
 SCORING_CONSTANTS: dict[str, Any] = {
     "thresholds": {
         "moderate": THRESHOLD_MODERATE,
         "high": THRESHOLD_HIGH,
+    },
+    "preprocessing": {
+        "wet_day_mm": WET_DAY_MM,
     },
     "flood": {
         "weight_rain3": WEIGHT_FLOOD_RAIN3,

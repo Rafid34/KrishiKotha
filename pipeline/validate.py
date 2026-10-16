@@ -220,6 +220,43 @@ def seasonality_checks(stats: Mapping[str, Mapping[str, Mapping[int, Mapping[str
     return checks
 
 
+def negative_control(
+    series_by_district: Mapping[str, Sequence[tuple[date, float, str]]],
+) -> dict[str, Any]:
+    """Negative control: dry-season flood alerts (December to February).
+
+    Measures:
+    1. High flood days (level == 'high') in December, January, February for Sylhet, Sunamganj, Rangpur.
+    2. Distribution and monthly share of all High flood days across the year for Sylhet.
+    """
+    winter_counts: dict[str, dict[str, int]] = {}
+    for did in ("sylhet", "sunamganj", "rangpur"):
+        rows = series_by_district.get(did, [])
+        dec = sum(1 for d, _s, lvl in rows if lvl == "high" and d.month == 12)
+        jan = sum(1 for d, _s, lvl in rows if lvl == "high" and d.month == 1)
+        feb = sum(1 for d, _s, lvl in rows if lvl == "high" and d.month == 2)
+        winter_counts[did] = {
+            "dec": dec,
+            "jan": jan,
+            "feb": feb,
+            "total": dec + jan + feb,
+        }
+
+    sylhet_rows = series_by_district.get("sylhet", [])
+    sylhet_high_total = sum(1 for d, _s, lvl in sylhet_rows if lvl == "high")
+    sylhet_by_month: dict[int, dict[str, Any]] = {}
+    for m in range(1, 13):
+        cnt = sum(1 for d, _s, lvl in sylhet_rows if lvl == "high" and d.month == m)
+        share = (cnt / sylhet_high_total * 100.0) if sylhet_high_total > 0 else 0.0
+        sylhet_by_month[m] = {"count": cnt, "share": share}
+
+    return {
+        "winter_counts": winter_counts,
+        "sylhet_monthly": sylhet_by_month,
+        "sylhet_high_total": sylhet_high_total,
+    }
+
+
 # --------------------------------------------------------------------------------------------
 # Data access
 # --------------------------------------------------------------------------------------------
@@ -321,6 +358,34 @@ def _event_block(title: str, metrics: Mapping[str, Any], note: str) -> list[str]
     ]
 
 
+def _negative_control_block(ctrl: Mapping[str, Any]) -> list[str]:
+    lines = [
+        "### 4. Negative control: dry-season flood alerts (December to February)",
+        "",
+        "High flood days during the dry season (December to February) for flood-prone districts:",
+        "",
+        "| District | Dec | Jan | Feb | Total (Dec-Feb) |",
+        "|---|---|---|---|---|",
+    ]
+    for did in ("sylhet", "sunamganj", "rangpur"):
+        w = ctrl["winter_counts"].get(did, {"dec": 0, "jan": 0, "feb": 0, "total": 0})
+        lines.append(f"| {did.title()} | {w['dec']} | {w['jan']} | {w['feb']} | {w['total']} |")
+    lines.append("")
+    lines.append("Sylhet High flood days and share of annual High days per month:")
+    lines.append("")
+    lines.append("| Measure | " + " | ".join(MONTHS) + " | Total |")
+    lines.append("|---|" + "---|" * 12 + "---|")
+
+    counts = [str(ctrl["sylhet_monthly"][m]["count"]) for m in range(1, 13)]
+    total_cnt = str(ctrl["sylhet_high_total"])
+    lines.append(f"| High days | {' | '.join(counts)} | {total_cnt} |")
+
+    shares = [f"{ctrl['sylhet_monthly'][m]['share']:.1f}%" for m in range(1, 13)]
+    lines.append(f"| Share (%) | {' | '.join(shares)} | 100.0% |")
+    lines.append("")
+    return lines
+
+
 def build_report(app_db: Path, year_db: Path) -> str:
     """Run every measurement and return the Markdown text."""
     _use_database(app_db)
@@ -343,6 +408,10 @@ def build_report(app_db: Path, year_db: Path) -> str:
         year_series = load_flood_series(ysession, "sylhet", EVENT_START, FALSE_ALARM_END)
         scores = load_scores(ysession, YEAR_START, YEAR_END)
         year_imerg = {did: load_imerg_obs(ysession, did, CROSS_START, CROSS_END) for did in CROSS_DISTRICTS}
+        ctrl_series = {
+            did: load_flood_series(ysession, did, YEAR_START, YEAR_END)
+            for did in ("sylhet", "sunamganj", "rangpur")
+        }
     year_engine.dispose()
 
     # 1. Event backtest ----------------------------------------------------------------------
@@ -406,6 +475,10 @@ def build_report(app_db: Path, year_db: Path) -> str:
     days = sorted({len(v["flood"]) for v in scores.values()})
     lines.append(f"Days scored per district: {', '.join(str(n) for n in days)} (of 365).")
     lines.append("")
+
+    # 4. Negative control ----------------------------------------------------------------------
+    ctrl = negative_control(ctrl_series)
+    lines += _negative_control_block(ctrl)
     return "\n".join(lines)
 
 

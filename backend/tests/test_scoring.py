@@ -15,6 +15,8 @@ from backend.app.services.risk.scoring import (
     SCORING_CONSTANTS,
     THRESHOLD_HIGH,
     THRESHOLD_MODERATE,
+    WET_DAY_MM,
+    apply_wet_day_threshold,
     WEIGHT_DROUGHT_HEAT,
     WEIGHT_DROUGHT_RAIN,
     WEIGHT_DROUGHT_SOIL,
@@ -65,6 +67,14 @@ def test_scoring_weights_and_constants():
     assert THRESHOLD_MODERATE == 40.0
     assert THRESHOLD_HIGH == 70.0
     assert "thresholds" in SCORING_CONSTANTS
+    assert "preprocessing" in SCORING_CONSTANTS
+    assert SCORING_CONSTANTS["preprocessing"]["wet_day_mm"] == 1.0
+    assert WET_DAY_MM == 1.0
+    assert apply_wet_day_threshold(0.0) == 0.0
+    assert apply_wet_day_threshold(0.99) == 0.0
+    assert apply_wet_day_threshold(1.0) == 1.0
+    assert apply_wet_day_threshold(15.5) == 15.5
+    assert apply_wet_day_threshold(None) is None
     assert "flood" in SCORING_CONSTANTS
     assert "drought" in SCORING_CONSTANTS
     assert "salinity" in SCORING_CONSTANTS

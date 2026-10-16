@@ -161,6 +161,24 @@ export default function Method() {
                   <code>{formatSalinityFormula(scoring)}</code>
                 </pre>
               </div>
+
+              {/* Preprocessing card */}
+              {scoring?.preprocessing && (
+                <div className="method-formula-card">
+                  <h3>{lang === 'bn' ? 'প্রাক-প্রক্রিয়াকরণ (Preprocessing)' : 'Rainfall Preprocessing'}</h3>
+                  <pre className="method-code-block">
+                    <code>
+                      {[
+                        `wet_day_threshold = ${scoring.preprocessing.wet_day_mm} mm/day`,
+                        ``,
+                        lang === 'bn'
+                          ? '১.০ মিমি-র কম দৈনিক বৃষ্টিপাতকে ০ হিসেবে রূপান্তর করা হয় (ভিত্তি বছর এবং লাইভ উভয় ক্ষেত্রে)।'
+                          : 'Daily rainfall < 1.0 mm is set to 0.0 mm in both baseline climatology and live observation feeds.',
+                      ].join('\n')}
+                    </code>
+                  </pre>
+                </div>
+              )}
             </div>
           </section>
 

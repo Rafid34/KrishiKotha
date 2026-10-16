@@ -639,6 +639,7 @@ Definitions per district and effective date `t`:
 - `soil_pctl`: percentile rank of current soil wetness (SMAP `sm_rootzone_pctl` if available, otherwise `pctl(GWETROOT, baseline soil sample)`).
 - `Tmax7`: mean `T2M_MAX` over the last 7 days; `Tbase`: baseline mean.
 - `ndvi_anom`: current 16-day NDVI minus baseline mean (Level 2).
+- Preprocessing: daily rainfall below 1.0 mm is set to 0.0 mm (standard wet-day threshold) before computing rolling sums in both baseline and live feeds.
 
 Flood:
 ```

@@ -66,6 +66,14 @@ describe('method formatting utils', () => {
       const text = formatFloodFormula(custom);
       expect(text).toContain('0.5 × f_rain3 + 0.3 × f_rain7 + 0.2 × f_soil');
     });
+
+    it('displays preprocessing wet-day threshold', () => {
+      const custom = {
+        preprocessing: { wet_day_mm: 1.0 },
+      };
+      const text = formatFloodFormula(custom);
+      expect(text).toContain('Wet-day threshold: 1 mm/day');
+    });
   });
 
   describe('formatDroughtFormula', () => {
