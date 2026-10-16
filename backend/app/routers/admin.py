@@ -6,17 +6,26 @@ from __future__ import annotations
 
 import hmac
 import logging
+import threading
+from datetime import date as dt_date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from ..db import get_db
+from ..db import SessionLocal, get_db
 from ..errors import ApiError, not_found
-from ..models import District, MessageLog, Subscriber
-from ..schemas import BroadcastOut, BroadcastRequest
+from ..models import District, MessageLog, PipelineRun, Subscriber
+from ..schemas import (
+    BroadcastOut,
+    BroadcastRequest,
+    PipelineRunRequest,
+    PipelineRunStartOut,
+)
 from ..services.messaging.gateway_loader import outbound_gateway
 from ..services.messaging.handler import current_advice
+
 
 log = logging.getLogger("krishi_kotha")
 
@@ -80,4 +89,68 @@ def broadcast(payload: BroadcastRequest, db: Session = Depends(get_db)) -> Broad
             )
     db.commit()
     log.info("Broadcast to %s: %d of %d sent via %s", payload.district_id, sent, len(targets), channel)
+
     return BroadcastOut(recipients=len(targets), sample_text_bn=sample, sent=sent)
+
+
+def default_pipeline_runner(
+    record_id: int, start: dt_date, end: dt_date, run: str, mode: str
+) -> None:
+    from pipeline.run_pipeline import run_pipeline
+
+    with SessionLocal() as session:
+        try:
+            run_pipeline(session, start, end, run, record_id=record_id)
+        except Exception as exc:
+            log.exception("Pipeline run %d failed: %s", record_id, exc)
+            rec = session.get(PipelineRun, record_id)
+            if rec is not None:
+                rec.finished_at = datetime.now(timezone.utc)
+                rec.status = "failed"
+                rec.detail = {"error": str(exc)}
+                session.commit()
+
+
+pipeline_runner = default_pipeline_runner
+
+
+@router.post("/pipeline/run", response_model=PipelineRunStartOut)
+def trigger_pipeline_run(
+    payload: PipelineRunRequest,
+    db: Session = Depends(get_db),
+) -> PipelineRunStartOut:
+    """Start a pipeline run in the background."""
+    if get_settings().data_mode == "snapshot" and payload.mode == "live":
+        raise ApiError(409, "conflict", "DATA_MODE=snapshot forbids live runs")
+
+    active = db.scalars(select(PipelineRun).where(PipelineRun.status == "running")).first()
+    if active is not None:
+        raise ApiError(409, "conflict", f"Pipeline run {active.id} is already active")
+
+    if payload.as_of is not None:
+        end = payload.as_of
+    else:
+        from ..services.nasa import cmr, imerg
+        latest = cmr.latest_granule_date(imerg.SHORT_NAMES.get(payload.run, "GPM_3IMERGDL"), imerg.VERSION)
+        end = latest.date() if latest is not None else dt_date.today()
+
+    start = end - timedelta(days=29)
+
+    record = PipelineRun(
+        started_at=datetime.now(timezone.utc),
+        status="running",
+        detail={"mode": payload.mode, "run": payload.run, "start": start.isoformat(), "end": end.isoformat()},
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    thread = threading.Thread(
+        target=pipeline_runner,
+        args=(record.id, start, end, payload.run, payload.mode),
+        daemon=True,
+    )
+    thread.start()
+
+    return PipelineRunStartOut(run_id=record.id, status="started")
+

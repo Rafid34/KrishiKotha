@@ -342,6 +342,7 @@ def run_pipeline(
     end: date,
     run: str = "late",
     *,
+    record_id: int | None = None,
     rain_fetcher: RainFetcher = imerg.district_means,  # type: ignore[assignment]
     power_fetcher: PowerFetcher = fetch_power,
     soil_fetcher: SoilFetcher = smap.district_values,  # type: ignore[assignment]
@@ -537,12 +538,21 @@ def run_pipeline(
         "skipped": stats.skipped[:50],
         "skipped_count": len(stats.skipped),
     }
+    if record_id is not None:
+        existing = session.get(PipelineRun, record_id)
+        if existing is not None:
+            existing.finished_at = datetime.now(timezone.utc)
+            existing.status = status
+            existing.detail = detail
+            session.commit()
+            return existing
     record = PipelineRun(
         started_at=started, finished_at=datetime.now(timezone.utc), status=status, detail=detail
     )
     session.add(record)
     session.commit()
     return record
+
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:

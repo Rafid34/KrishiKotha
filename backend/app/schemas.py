@@ -225,3 +225,15 @@ class LayerOut(BaseModel):
     coverage_start: str
 
 
+class PipelineRunRequest(BaseModel):
+    mode: str = "live"
+    as_of: dt_date | None = None
+    run: str = "late"
+
+
+class PipelineRunStartOut(BaseModel):
+    run_id: int
+    status: str
+
+
+

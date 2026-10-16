@@ -479,4 +479,6 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - censored-lead-time (F7): FIXED, `cd frontend; npm test -- src/__tests__/censored_lead_time.test.jsx`
 - R-012: NOT REPRODUCED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_pipeline.py -k test_main_exit_codes`
 - R-001: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_api.py -k test_layers_endpoint`
+- R-002: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_admin_pipeline.py`
+
 
