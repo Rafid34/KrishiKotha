@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import RiskBadge from '../components/RiskBadge.jsx';
+import SerratedDivider from '../components/SerratedDivider.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 import { formatNumber, formatDate } from '../utils/format.js';
 import { getBacktestSylhet } from '../api/client.js';
@@ -34,7 +35,6 @@ export default function EventReplay({ initialData = null } = {}) {
     getBacktestSylhet()
       .then(res => {
         setData(res);
-        // Default to reference onset date or the last date in series
         const series = res.series || [];
         const onsetIdx = series.findIndex(p => p.date === res.reference_onset);
         if (onsetIdx !== -1) {
@@ -99,63 +99,66 @@ export default function EventReplay({ initialData = null } = {}) {
   const firstSeriesDate = series.length > 0 ? series[0].date : null;
   const isCensored = Boolean(data?.first_high && firstSeriesDate && data.first_high === firstSeriesDate);
 
-  // Formatted chart points and data statistics (R-019)
+  const togglePlay = () => setIsPlaying(p => !p);
+
+  const handleSliderChange = e => {
+    setIsPlaying(false);
+    setCurrentDateIndex(Number(e.target.value));
+  };
+
+  const handleStepClick = stepDate => {
+    if (!stepDate) return;
+    setIsPlaying(false);
+    const idx = series.findIndex(p => p.date === stepDate);
+    if (idx !== -1) {
+      setCurrentDateIndex(idx);
+    }
+  };
+
+  // Prepare chart series
   const { chartData, totalRain, peakRain, peakRainDate, peakScore, peakScoreDate } = useMemo(() => {
-    let totRain = 0;
+    if (series.length === 0) {
+      return { chartData: [], totalRain: 0, peakRain: 0, peakRainDate: null, peakScore: 0, peakScoreDate: null };
+    }
+
+    let totR = 0;
     let maxR = 0;
-    let maxRDate = '';
+    let maxRDate = null;
     let maxS = 0;
-    let maxSDate = '';
+    let maxSDate = null;
+
     const formatted = series.map(p => {
-      const r = p.rain_mm != null ? p.rain_mm : 0;
-      const s = p.flood_score != null ? p.flood_score : 0;
-      totRain += r;
+      const r = p.rain_mm != null ? Math.round(p.rain_mm * 10) / 10 : 0;
+      const score = p.flood_score != null ? Math.round(p.flood_score * 10) / 10 : 0;
+
+      totR += r;
       if (r > maxR) {
         maxR = r;
         maxRDate = p.date;
       }
-      if (s > maxS) {
-        maxS = s;
+      if (score > maxS) {
+        maxS = score;
         maxSDate = p.date;
       }
+
       return {
         date: p.date,
         shortDate: p.date ? p.date.slice(5) : '',
         rain_mm: r,
-        flood_score: p.flood_score,
-        p90: p.rain_pctl_90,
+        flood_score: score,
+        p90: p.rain_pctl_90 != null ? Math.round(p.rain_pctl_90 * 10) / 10 : null,
       };
     });
+
     return {
       chartData: formatted,
-      totalRain: totRain,
+      totalRain: totR,
       peakRain: maxR,
       peakRainDate: maxRDate,
       peakScore: maxS,
       peakScoreDate: maxSDate,
     };
   }, [series]);
-
-  const handleStepClick = dateStr => {
-    if (!dateStr) return;
-    const idx = series.findIndex(p => p.date === dateStr);
-    if (idx !== -1) {
-      setCurrentDateIndex(idx);
-      setIsPlaying(false);
-    }
-  };
-
-  const handleSliderChange = e => {
-    setCurrentDateIndex(Number(e.target.value));
-    setIsPlaying(false);
-  };
-
-  const togglePlay = () => {
-    if (currentDateIndex >= series.length - 1) {
-      setCurrentDateIndex(0);
-    }
-    setIsPlaying(prev => !prev);
-  };
 
   if (loading) {
     return (
@@ -168,11 +171,10 @@ export default function EventReplay({ initialData = null } = {}) {
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="replay-page replay-page--error" role="alert">
-        <h2>{t('error', lang)}</h2>
-        <p>{error}</p>
+        <p>{t('error', lang)}: {error || 'No replay data available'}</p>
         <button type="button" className="replay-retry-btn" onClick={loadData}>
           {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
         </button>
@@ -235,11 +237,11 @@ export default function EventReplay({ initialData = null } = {}) {
       </nav>
 
       {/* Date Slider & Play Controls */}
-      <section className="replay-controls" aria-label="Timeline controls">
+      <section className="replay-controls card" aria-label="Timeline controls">
         <div className="replay-controls__row">
           <button
             type="button"
-            className="replay-play-btn"
+            className="replay-play-btn btn-primary"
             onClick={togglePlay}
             aria-label={isPlaying ? t('replay.pause', lang) : t('replay.play', lang)}
           >
@@ -274,7 +276,7 @@ export default function EventReplay({ initialData = null } = {}) {
             </time>
             {currentPoint && (
               <div className="replay-current-badge">
-                <span className="replay-current-score">
+                <span className="replay-current-score score-number">
                   {formatNumber(currentPoint.flood_score, 1, lang)}
                 </span>
                 <RiskBadge level={currentPoint.flood_level} score={currentPoint.flood_score} lang={lang} />
@@ -284,9 +286,15 @@ export default function EventReplay({ initialData = null } = {}) {
         </div>
       </section>
 
+      <SerratedDivider />
+
       {/* Middle: Rainfall chart with percentile lines, flood score, and milestone markers */}
-      <section className="replay-chart-card" aria-label="Event chart">
+      <section className="replay-chart-card card" aria-label="Event chart">
         <div className="replay-chart-card__header">
+          <div className="catalog-label" aria-hidden="true">
+            <span className="catalog-label__dot" />
+            <span className="catalog-label__mono">Fig. 3 Flood risk & rainfall timeline, Sylhet June 2022</span>
+          </div>
           <h2 className="replay-chart-card__title" lang={lang === 'bn' ? 'bn' : undefined}>
             {lang === 'bn' ? 'বৃষ্টিপাত ও বন্যা ঝুঁকি সময়রেখা' : 'Rainfall & Flood Risk Timeline'}
           </h2>
@@ -335,19 +343,19 @@ export default function EventReplay({ initialData = null } = {}) {
               <Legend
                 verticalAlign="top"
                 align="right"
-                wrapperStyle={{ fontSize: 11, paddingBottom: 8 }}
+                wrapperStyle={{ fontSize: 11, paddingBottom: 8, color: 'var(--ink-muted)' }}
               />
 
               {/* Moderate threshold line (40) */}
               <ReferenceLine
                 yAxisId="right"
                 y={40}
-                stroke="#E0A100"
+                stroke="#FBBF24"
                 strokeDasharray="4 4"
-                strokeWidth={1}
+                strokeWidth={1.5}
                 label={{
                   value: lang === 'bn' ? 'মাঝারি (৪০)' : 'Moderate (40)',
-                  fill: '#8F6600',
+                  fill: '#FBBF24',
                   fontSize: 10,
                   position: 'insideBottomLeft',
                 }}
@@ -357,12 +365,12 @@ export default function EventReplay({ initialData = null } = {}) {
               <ReferenceLine
                 yAxisId="right"
                 y={70}
-                stroke="#C62828"
+                stroke="#F87171"
                 strokeDasharray="4 4"
-                strokeWidth={1}
+                strokeWidth={1.5}
                 label={{
                   value: lang === 'bn' ? 'উচ্চ (৭০)' : 'High (70)',
-                  fill: '#C62828',
+                  fill: '#F87171',
                   fontSize: 10,
                   position: 'insideBottomLeft',
                 }}
@@ -373,11 +381,12 @@ export default function EventReplay({ initialData = null } = {}) {
                 <ReferenceLine
                   yAxisId="left"
                   x={data.first_moderate.slice(5)}
-                  stroke="#E0A100"
+                  stroke="#FBBF24"
                   strokeDasharray="3 3"
+                  strokeWidth={1.5}
                   label={{
                     value: lang === 'bn' ? 'প্রথম মাঝারি' : 'First Moderate',
-                    fill: '#8F6600',
+                    fill: '#FBBF24',
                     fontSize: 10,
                     position: 'top',
                   }}
@@ -388,11 +397,11 @@ export default function EventReplay({ initialData = null } = {}) {
                 <ReferenceLine
                   yAxisId="left"
                   x={data.first_high.slice(5)}
-                  stroke="#C62828"
-                  strokeWidth={1.5}
+                  stroke="#F87171"
+                  strokeWidth={2}
                   label={{
                     value: lang === 'bn' ? 'প্রথম উচ্চ' : 'First High',
-                    fill: '#C62828',
+                    fill: '#F87171',
                     fontSize: 10,
                     position: 'top',
                   }}
@@ -403,11 +412,11 @@ export default function EventReplay({ initialData = null } = {}) {
                 <ReferenceLine
                   yAxisId="left"
                   x={data.reference_onset.slice(5)}
-                  stroke="#0B3D91"
+                  stroke="#60A5FA"
                   strokeWidth={2}
                   label={{
                     value: lang === 'bn' ? 'বন্যা শুরু (১৬ জুন)' : 'Flood Onset (16 Jun)',
-                    fill: '#0B3D91',
+                    fill: '#60A5FA',
                     fontSize: 10,
                     position: 'top',
                   }}
@@ -419,7 +428,7 @@ export default function EventReplay({ initialData = null } = {}) {
                 <ReferenceLine
                   yAxisId="left"
                   x={currentDate.slice(5)}
-                  stroke="var(--brand)"
+                  stroke="var(--accent)"
                   strokeWidth={2}
                 />
               )}
@@ -429,7 +438,7 @@ export default function EventReplay({ initialData = null } = {}) {
                 yAxisId="left"
                 dataKey="rain_mm"
                 name={t('replay.rainMm', lang)}
-                fill="var(--nasa-blue, #0B3D91)"
+                fill="#60A5FA"
                 radius={[3, 3, 0, 0]}
                 opacity={0.85}
               />
@@ -440,7 +449,7 @@ export default function EventReplay({ initialData = null } = {}) {
                 type="monotone"
                 dataKey="flood_score"
                 name={t('replay.floodScore', lang)}
-                stroke="#C62828"
+                stroke="#F87171"
                 strokeWidth={2.5}
                 dot={false}
               />
@@ -454,9 +463,12 @@ export default function EventReplay({ initialData = null } = {}) {
         </p>
       </section>
 
+      <SerratedDivider />
+
       {/* Bottom: Summary box with API lead time & fixed thresholds note */}
-      <section className="replay-summary-box" aria-label="Lead time summary">
-        <div className="replay-summary-banner">
+      <section className="replay-summary-box card" aria-label="Lead time summary">
+        {/* Uncensored lead-time summary uses Sticky note card; censored lead-time notice strictly uses dark elevated surface */}
+        <div className={`replay-summary-banner ${!isCensored ? 'replay-summary-banner--sticky sticky-note' : 'replay-summary-banner--censored'}`}>
           <div className="replay-summary-banner__icon" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
@@ -493,7 +505,7 @@ export default function EventReplay({ initialData = null } = {}) {
           )}
         </div>
 
-        {/* Mandatory disclaimer */}
+        {/* Mandatory disclaimer — always visible, unrotated, AA contrast */}
         <p className="replay-disclaimer" lang={lang === 'bn' ? 'bn' : undefined}>
           {t('disclaimer', lang)}
         </p>
@@ -515,7 +527,7 @@ function ReplayTooltip({ active, payload, label, lang }) {
         <span>{t('replay.rainMm', lang)}:</span>
         <strong>{formatNumber(pt.rain_mm, 1, lang)} mm</strong>
       </div>
-      <div className="replay-tooltip__item" style={{ color: '#C62828' }}>
+      <div className="replay-tooltip__item" style={{ color: 'var(--risk-high)' }}>
         <span>{t('replay.floodScore', lang)}:</span>
         <strong>{formatNumber(pt.flood_score, 1, lang)}</strong>
       </div>
@@ -524,15 +536,17 @@ function ReplayTooltip({ active, payload, label, lang }) {
 }
 
 /* ─── Styles ───────────────────────────────────────────────────────── */
-const style = document.createElement('style');
-style.textContent = `
+const style = typeof document !== 'undefined' ? document.createElement('style') : null;
+if (style) {
+  style.textContent = `
 .replay-page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-4) var(--space-8);
+  padding: var(--space-6) var(--space-4) var(--space-12);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  width: 100%;
 }
 
 .replay-page--loading,
@@ -545,15 +559,16 @@ style.textContent = `
 
 .replay-retry-btn {
   margin-top: var(--space-3);
-  padding: 6px 16px;
-  background: var(--brand);
-  color: #fff;
+  padding: 0 var(--space-4);
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: 600;
+  min-height: 44px;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition-fast);
 }
 .replay-retry-btn:hover {
   background: var(--brand-dark);
@@ -564,12 +579,14 @@ style.textContent = `
   justify-content: space-between;
   align-items: baseline;
   border-bottom: 1px solid var(--border);
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
 }
 .replay-title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--brand);
+  font-family: var(--font-serif);
+  font-size: var(--text-3xl);
+  font-weight: 300;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
   margin: 0;
 }
 .replay-subtitle {
@@ -582,47 +599,56 @@ style.textContent = `
 .replay-steps {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .step-chip {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-2);
+  padding: var(--space-3);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition);
+  min-height: 52px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   font-family: inherit;
 }
 .step-chip:hover:not(:disabled) {
-  border-color: var(--brand);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: #36322F;
 }
 .step-chip--active {
-  border-color: var(--brand);
-  background: color-mix(in srgb, var(--brand) 6%, var(--surface));
+  border-color: rgba(212, 242, 104, 0.4);
+  background: rgba(212, 242, 104, 0.08);
 }
 .step-chip--selected {
-  border-color: var(--brand);
-  background: color-mix(in srgb, var(--brand) 12%, var(--surface));
-  box-shadow: 0 0 0 2px var(--brand);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: var(--shadow-glow);
+}
+.step-chip--selected .step-chip__label {
+  color: var(--accent-foreground);
+}
+.step-chip--selected .step-chip__date {
+  color: rgba(12, 10, 9, 0.75);
 }
 .step-chip:focus-visible {
-  outline: 3px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .step-chip__number {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--border);
-  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 12px;
   display: flex;
@@ -630,9 +656,10 @@ style.textContent = `
   justify-content: center;
   flex-shrink: 0;
 }
-.step-chip--active .step-chip__number {
-  background: var(--brand);
-  color: #FFFFFF;
+.step-chip--selected .step-chip__number {
+  background: #0C0A09;
+  color: var(--accent);
+  border-color: #0C0A09;
 }
 
 .step-chip__content {
@@ -642,13 +669,14 @@ style.textContent = `
 }
 .step-chip__label {
   font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--ink);
+  font-weight: 600;
+  color: var(--foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .step-chip__date {
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink-muted);
   white-space: nowrap;
@@ -656,9 +684,6 @@ style.textContent = `
 
 /* Controls bar */
 .replay-controls {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
 }
 .replay-controls__row {
@@ -672,31 +697,16 @@ style.textContent = `
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--brand);
-  color: #FFFFFF;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition);
-  font-family: inherit;
-}
-.replay-play-btn:hover {
-  background: var(--brand-dark);
-}
-.replay-play-btn:focus-visible {
-  outline: 3px solid var(--brand-dark);
-  outline-offset: 2px;
 }
 
 .replay-slider {
   flex: 1;
   min-width: 180px;
   height: 6px;
-  accent-color: var(--brand);
+  accent-color: var(--accent);
   cursor: pointer;
+  background: #141210;
+  border-radius: var(--radius-full);
 }
 
 .replay-current-info {
@@ -706,12 +716,14 @@ style.textContent = `
   flex-shrink: 0;
 }
 .replay-current-date {
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--ink);
-  background: var(--bg);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
+  color: var(--foreground);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
 }
 .replay-current-badge {
   display: flex;
@@ -721,37 +733,33 @@ style.textContent = `
 .replay-current-score {
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--ink);
+  color: var(--foreground);
 }
 
 /* Chart card */
 .replay-chart-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  box-shadow: var(--shadow-sm);
 }
 .replay-chart-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 .replay-chart-card__title {
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--foreground);
   margin: 0;
 }
 .replay-chart-card__source {
   font-size: 11px;
   color: var(--nasa-blue);
-  font-weight: 500;
+  font-weight: 600;
 }
 .replay-chart-summary {
   font-size: 12px;
@@ -759,23 +767,25 @@ style.textContent = `
   border-top: 1px dashed var(--border);
   padding-top: var(--space-2);
   margin: 0;
+  line-height: 1.4;
 }
 
 /* Tooltip */
 .replay-tooltip {
-  background: var(--surface);
+  background: #1C1917;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   font-size: 11px;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 .replay-tooltip__date {
+  font-family: var(--font-mono);
   font-weight: 700;
-  color: var(--ink);
+  color: var(--foreground);
   border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
   margin-bottom: 2px;
@@ -788,43 +798,67 @@ style.textContent = `
 
 /* Summary Box */
 .replay-summary-box {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  box-shadow: var(--shadow-sm);
 }
 
 .replay-summary-banner {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  background: color-mix(in srgb, var(--brand) 8%, var(--bg));
-  border: 1.5px solid var(--brand);
-  border-radius: var(--radius-md);
   padding: var(--space-4);
 }
+
+.replay-summary-banner--sticky {
+  background: var(--sticky-bg);
+  color: var(--sticky-text);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.replay-summary-banner--sticky .replay-summary-banner__icon {
+  color: var(--sticky-text);
+}
+.replay-summary-banner--sticky .replay-summary-banner__title {
+  color: var(--sticky-text);
+  font-family: var(--font-serif);
+}
+.replay-summary-banner--sticky .replay-summary-banner__desc {
+  color: var(--sticky-text);
+}
+
+.replay-summary-banner--censored {
+  background: var(--surface-elevated);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+}
+.replay-summary-banner--censored .replay-summary-banner__icon {
+  color: var(--risk-high);
+}
+.replay-summary-banner--censored .replay-summary-banner__title {
+  color: var(--foreground);
+  font-family: var(--font-serif);
+}
+.replay-summary-banner--censored .replay-summary-banner__desc {
+  color: var(--ink-muted);
+}
+
 .replay-summary-banner__icon {
-  color: var(--brand);
   flex-shrink: 0;
 }
 .replay-summary-banner__title {
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--brand-dark);
   margin: 0;
 }
 .replay-summary-banner__desc {
   font-size: var(--text-sm);
-  color: var(--ink);
   margin-top: 4px;
 }
 
 .replay-method-note {
-  background: var(--bg);
+  background: var(--surface-elevated);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   border: 1px solid var(--border);
@@ -833,9 +867,10 @@ style.textContent = `
   gap: var(--space-2);
 }
 .replay-method-note h4 {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--foreground);
   margin: 0;
 }
 .replay-method-note p {
@@ -848,6 +883,7 @@ style.textContent = `
   border-top: 1px dashed var(--border);
   padding-top: var(--space-2);
   font-style: italic;
+  font-size: 11px;
 }
 
 .replay-disclaimer {
@@ -877,7 +913,8 @@ style.textContent = `
   }
 }
 `;
-if (!document.getElementById('event-replay-styles')) {
-  style.id = 'event-replay-styles';
-  document.head.appendChild(style);
+  if (!document.getElementById('event-replay-styles')) {
+    style.id = 'event-replay-styles';
+    document.head.appendChild(style);
+  }
 }

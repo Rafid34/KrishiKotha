@@ -127,7 +127,7 @@ export default function PhoneMockup({
                         lang={isBangla ? 'bn' : 'en'}
                         style={
                           isBangla
-                            ? { fontSize: '18px', fontFamily: 'var(--font-bangla)', lineHeight: '1.5' }
+                            ? { fontSize: '18px', fontFamily: 'var(--font-bangla)', lineHeight: '1.6' }
                             : undefined
                         }
                       >
@@ -239,7 +239,7 @@ export default function PhoneMockup({
         <div className="phone-controls__actions">
           <button
             type="submit"
-            className="phone-btn phone-btn--send"
+            className="phone-btn phone-btn--send btn-primary"
             disabled={loading || !inputValue.trim()}
             aria-label={lang === 'bn' ? 'এসএমএস পাঠান' : 'Send SMS'}
           >
@@ -303,15 +303,14 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   margin: 0 auto;
 }
 
-/* Feature Phone Outer Casing */
+/* Feature Phone Outer Casing — Dark charcoal finish */
 .phone-casing {
   width: 100%;
   max-width: 320px;
-  background: #242926;
-  background: linear-gradient(180deg, #2D3430 0%, #1F2421 100%);
-  border: 4px solid #3F4742;
+  background: linear-gradient(180deg, #24201E 0%, #161413 100%);
+  border: 3px solid rgba(255, 255, 255, 0.12);
   border-radius: 36px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
   padding: 16px 14px 20px 14px;
   display: flex;
   flex-direction: column;
@@ -329,19 +328,19 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 }
 
 .phone-earpiece__slit {
-  width: 50px;
+  width: 48px;
   height: 4px;
-  background: #111413;
+  background: #0C0A09;
   border-radius: 2px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 
 .phone-brand {
-  font-family: var(--font-latin);
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 2px;
   font-weight: 700;
-  color: #7D8882;
+  color: #7D7571;
   margin-bottom: 8px;
   text-transform: uppercase;
 }
@@ -349,17 +348,16 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 /* Monochrome LCD Screen */
 .phone-screen {
   width: 100%;
-  background: #C4D3AB;
-  background: linear-gradient(180deg, #CAD7B0 0%, #BDCC9E 100%);
-  border: 3px solid #141715;
+  background: #0E0C0B;
+  border: 2px solid #1C1917;
   border-radius: 8px;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
-  height: 290px;
+  height: 300px;
   overflow: hidden;
-  color: #142210;
-  font-family: var(--font-latin);
+  color: #E7E5E4;
+  font-family: var(--font-sans);
 }
 
 /* LCD Header Status Bar */
@@ -367,16 +365,18 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 6px;
-  border-bottom: 1px dashed rgba(20, 34, 16, 0.35);
-  font-size: 11px;
-  font-weight: 700;
-  color: #142210;
+  padding: 4px 8px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #A8A29E;
   letter-spacing: 0.5px;
 }
 
 .phone-screen__signal {
   font-size: 10px;
+  color: var(--accent);
 }
 
 .phone-screen__carrier {
@@ -392,7 +392,7 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 /* LCD Screen Viewport */
 .phone-screen__viewport {
   flex: 1;
-  padding: 8px 6px;
+  padding: 8px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -412,27 +412,29 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 }
 
 .phone-screen__hint-cmd {
-  font-family: monospace;
-  font-size: 15px;
+  font-family: var(--font-mono);
+  font-size: 14px;
   font-weight: 700;
-  color: #142210;
-  background: rgba(20, 34, 16, 0.12);
+  color: var(--accent);
+  background: rgba(212, 242, 104, 0.12);
   padding: 4px 10px;
   border-radius: 4px;
+  border: 1px solid rgba(212, 242, 104, 0.25);
   letter-spacing: 1px;
 }
 
 .phone-screen__hint-desc {
   font-size: 12px;
-  color: #21331B;
+  color: #A8A29E;
   line-height: 1.4;
   margin: 0;
 }
 
 .phone-screen__hint-tips {
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
-  color: #3B5233;
+  color: var(--accent);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -448,23 +450,23 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
   max-width: 95%;
   word-break: break-word;
 }
 
 .phone-msg--farmer {
   align-self: flex-end;
-  background: rgba(20, 34, 16, 0.18);
-  border: 1px solid rgba(20, 34, 16, 0.3);
+  background: rgba(212, 242, 104, 0.14);
+  border: 1px solid rgba(212, 242, 104, 0.35);
   text-align: right;
 }
 
 .phone-msg--krishi {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(20, 34, 16, 0.25);
+  background: #1C1917;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   text-align: left;
 }
 
@@ -472,33 +474,32 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;
-  opacity: 0.7;
+  color: #A8A29E;
   letter-spacing: 0.5px;
   margin-bottom: 2px;
 }
 
 .phone-msg__body {
   margin: 0;
-  color: #121F0E;
+  color: #E7E5E4;
 }
 
-/* Latin messages (English commands) */
 .phone-msg__body--latin {
   font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-  font-family: var(--font-latin);
+  font-weight: 500;
+  line-height: 1.4;
+  font-family: var(--font-sans);
 }
 
-/* Bangla message text guaranteed >= 18px in Noto Sans Bengali */
 .phone-msg__body--bangla {
   font-size: 18px !important;
   font-family: var(--font-bangla) !important;
   font-weight: 500;
-  line-height: 1.5;
-  color: #0E1A0C;
+  line-height: 1.6;
+  color: #E7E5E4;
 }
 
 .phone-msg--loading {
@@ -507,7 +508,7 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   font-weight: 700;
   padding: 4px 8px;
   background: transparent;
-  color: #1A2E14;
+  color: var(--accent);
 }
 
 .phone-screen__blink {
@@ -515,7 +516,7 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 }
 
 @keyframes lcd-blink {
-  from { opacity: 0.3; }
+  from { opacity: 0.4; }
   to { opacity: 1; }
 }
 
@@ -523,11 +524,12 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 .phone-screen__footer {
   display: flex;
   justify-content: space-between;
-  padding: 3px 6px;
-  border-top: 1px dashed rgba(20, 34, 16, 0.35);
+  padding: 4px 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  font-family: var(--font-mono);
   font-size: 9px;
-  font-weight: 700;
-  color: #142210;
+  font-weight: 600;
+  color: #A8A29E;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -550,32 +552,34 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 
 .phone-key {
   width: 44px;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid #161A18;
+  height: 30px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
 .phone-key--call {
-  background: #2E6838;
-  color: #FFFFFF;
+  background: #1B3D24;
+  color: #4ADE80;
+  border-color: rgba(74, 222, 128, 0.4);
 }
 
 .phone-key--end {
-  background: #8B2C2C;
-  color: #FFFFFF;
+  background: #3B1B1B;
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.4);
 }
 
 .phone-keypad__dpad {
   width: 52px;
   height: 38px;
-  background: #1A1F1C;
-  border: 2px solid #3A443E;
+  background: #161413;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -586,7 +590,7 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 .phone-keypad__dpad-center {
   width: 22px;
   height: 16px;
-  background: #4D5952;
+  background: #2E2A27;
   border-radius: 6px;
 }
 
@@ -597,30 +601,31 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 }
 
 .phone-num-key {
-  height: 32px;
-  background: #313A35;
-  border: 1px solid #1E2420;
+  height: 34px;
+  background: #24201E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  color: #E2E8E4;
+  color: #E7E5E4;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.12);
-  transition: background 0.1s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s;
   cursor: pointer;
 }
 
 .phone-num-key:hover {
-  background: #3D4842;
+  background: #2F2A28;
 }
 
 .phone-num-key:active {
-  background: #222925;
+  background: #1C1917;
   transform: translateY(1px);
 }
 
 .phone-num-key__digit {
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -628,7 +633,7 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 
 .phone-num-key__sub {
   font-size: 7px;
-  color: #8C9891;
+  color: #A8A29E;
   letter-spacing: 0.5px;
   margin-top: 1px;
 }
@@ -647,24 +652,24 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 
 .phone-controls__input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 16px;
   font-size: var(--text-base);
-  font-family: var(--font-latin);
+  font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: var(--ink);
+  color: var(--foreground);
   background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
   transition: border-color var(--transition);
   min-height: 44px;
 }
 
 .phone-controls__input:focus-visible {
-  border-color: var(--brand);
-  outline: 3px solid var(--brand);
-  outline-offset: 1px;
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .phone-controls__actions {
@@ -680,16 +685,16 @@ if (style && !document.getElementById('phone-mockup-styles')) {
   gap: 8px;
   min-height: 44px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--text-base);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all var(--transition-fast);
 }
 
 .phone-btn--send {
-  background: var(--brand);
-  color: #FFFFFF;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
 }
 
@@ -698,28 +703,28 @@ if (style && !document.getElementById('phone-mockup-styles')) {
 }
 
 .phone-btn--send:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .phone-btn--send:focus-visible {
-  outline: 3px solid var(--brand-dark);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .phone-btn--call {
-  background: var(--surface);
-  color: var(--brand);
-  border: 2px solid var(--brand);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--foreground);
+  border: 1px solid var(--border);
 }
 
 .phone-btn--call:hover {
-  background: var(--brand);
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .phone-btn--call:focus-visible {
-  outline: 3px solid var(--brand-dark);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 `;

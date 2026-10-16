@@ -526,3 +526,11 @@ Deviations from DESIGN_REFERENCE.json logged per user instructions and precedenc
   - *Catalog Labels*: Positioned technical mono catalog labels with Acid Lime status dots on the map (`Fig. 1`) and TrendChart (`Fig. 2`). The status dots are decorative and never the sole carrier of meaning.
   - *Sticky Note Callout*: Non-critical Data Freshness note formatted as a Sticky Note card (`#D4F268` fill, `#1C1917` text, 1deg desktop rotation). The mandatory disclaimer remains strictly on the dark surface with high contrast and zero rotation.
   - *District Detail & Factor Bars*: 24px rounded card surfaces, Newsreader serif score values, and modern progress bars with high-contrast text and labels.
+
+- **T4: Event Replay, Simulator (Phone Mockup) & Method Page**:
+  - *Selective Sticky Note Usage*: The uncensored Event Replay lead-time banner adopts the Sticky Note card style (`#D4F268` bg, `#0C0A09` text). In strict compliance with prompt instructions, the censored lead-time notice and mandatory NASA disclaimer never use sticky notes and remain unrotated on dark elevated cards with full WCAG AA contrast.
+  - *Catalog Label Fig. 3*: Positioned technical mono catalog label with status dot on Event Replay timeline chart.
+  - *Feature Phone Mockup & Dark LCD*: Restyled feature phone casing to dark metallic stone tone (`#24201E`) with high-contrast dark LCD screen (`#0E0C0B`), off-white text (`#E7E5E4`), and physical keypad buttons. Preserved strict contract of inline `fontSize: '18px'` and `fontFamily: 'var(--font-bangla)'` for Bangla SMS messages.
+  - *Simulator Advisory Diagnosis Panel*: Dark surface cards (`#1C1917` and `#292524`), 24px corner radii, Newsreader serif underlying score values, and fully rounded quick-fill chips with >= 44px tap targets.
+  - *Method & Data Page*: 24px corner radii on all cards, dark monospace `<pre>` code blocks (`#0C0A09` bg, `#E7E5E4` text), high-contrast datasets table with Acid Lime links, and procedural serrated section divider below the header.
+

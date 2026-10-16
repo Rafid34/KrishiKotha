@@ -9,6 +9,7 @@ import {
   formatSourceDate,
 } from '../utils/method.js';
 import RiskBadge from '../components/RiskBadge.jsx';
+import SerratedDivider from '../components/SerratedDivider.jsx';
 
 /**
  * Method & Data page — Section 8.2 & Phase 12
@@ -57,6 +58,8 @@ export default function Method() {
           <p className="method-disclaimer-text">{t('disclaimer', lang)}</p>
         </div>
       </header>
+
+      <SerratedDivider />
 
       {/* Loading state */}
       {loading && (
@@ -240,7 +243,7 @@ const METHOD_STYLES = `
 .method-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4) var(--space-12);
+  padding: var(--space-4) var(--space-4) var(--space-12);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -250,27 +253,38 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  padding-bottom: var(--space-2);
 }
 
 .method-title {
-  font-size: var(--text-3xl);
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 300;
   color: var(--ink);
+  margin: 0;
+}
+
+[lang="bn"] .method-title,
+.method-title[lang="bn"] {
+  font-family: var(--font-bangla-heading);
+  font-weight: 600;
 }
 
 .method-subtitle {
   font-size: var(--text-base);
   color: var(--ink-muted);
+  margin: 0;
 }
 
 .method-disclaimer-banner {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: #FFF8E1;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid var(--risk-moderate);
   border-left: 4px solid var(--risk-moderate);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .method-disclaimer-icon {
@@ -280,7 +294,7 @@ const METHOD_STYLES = `
 .method-disclaimer-text {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: #795548;
+  color: #FDE68A;
   margin: 0;
 }
 
@@ -291,18 +305,21 @@ const METHOD_STYLES = `
   flex-direction: column;
   align-items: center;
   gap: var(--space-4);
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
+  border-radius: 24px;
 }
 
 .method-status--error {
   border: 1px solid var(--risk-high);
-  color: var(--risk-high);
+  color: #FCA5A5;
 }
 
 .method-spinner {
   width: 32px;
   height: 32px;
   border: 3px solid var(--border);
-  border-top-color: var(--brand);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: method-spin 0.8s linear infinite;
 }
@@ -312,16 +329,20 @@ const METHOD_STYLES = `
 }
 
 .method-retry-btn {
-  background: var(--brand);
-  color: #FFFFFF;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font-weight: 500;
+  background: var(--accent);
+  color: #0C0A09;
+  padding: 8px 24px;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 700;
   font-size: var(--text-sm);
+  min-height: 44px;
+  cursor: pointer;
+  transition: opacity var(--transition);
 }
 
 .method-retry-btn:hover {
-  background: var(--brand-dark);
+  opacity: 0.9;
 }
 
 .method-content {
@@ -334,25 +355,39 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: var(--space-6);
 }
 
 .method-section h2 {
+  font-family: var(--font-heading);
   font-size: var(--text-xl);
+  font-weight: 400;
   color: var(--ink);
-  border-bottom: 2px solid var(--border);
-  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-3);
+  margin: 0;
+}
+
+[lang="bn"] .method-section h2,
+.method-section h2[lang="bn"] {
+  font-family: var(--font-bangla-heading);
+  font-weight: 600;
 }
 
 .method-section-desc {
   font-size: var(--text-sm);
   color: var(--ink-muted);
-  margin-top: calc(-1 * var(--space-2));
+  margin: 0;
 }
 
 .method-table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  background: var(--surface-secondary);
 }
 
 .method-table {
@@ -370,7 +405,7 @@ const METHOD_STYLES = `
 }
 
 .method-table th {
-  background: #F0EFEA;
+  background: var(--surface-secondary);
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
@@ -381,7 +416,7 @@ const METHOD_STYLES = `
 }
 
 .method-table tbody tr:hover {
-  background: #FAF9F5;
+  background: var(--surface-elevated);
 }
 
 .method-ds-name {
@@ -397,16 +432,19 @@ const METHOD_STYLES = `
 .method-ds-date {
   white-space: nowrap;
   font-weight: 500;
+  color: var(--ink);
 }
 
 .method-link {
-  color: var(--brand);
-  font-weight: 500;
+  color: var(--accent);
+  font-weight: 600;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .method-link:hover {
-  color: var(--brand-dark);
   text-decoration: underline;
 }
 
@@ -418,23 +456,32 @@ const METHOD_STYLES = `
 
 .method-formula-card {
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-4);
-  background: #FAFAFA;
+  background: var(--surface-secondary);
 }
 
 .method-formula-card h3 {
+  font-family: var(--font-heading);
   font-size: var(--text-base);
+  font-weight: 400;
   margin-bottom: var(--space-2);
-  color: var(--brand-dark);
+  color: var(--accent);
+}
+
+[lang="bn"] .method-formula-card h3,
+.method-formula-card h3[lang="bn"] {
+  font-family: var(--font-bangla-heading);
+  font-weight: 600;
 }
 
 .method-code-block {
-  background: #1F2A24;
-  color: #E2E8F0;
+  background: #0C0A09;
+  color: #E7E5E4;
+  border: 1px solid var(--border);
   padding: var(--space-4);
-  border-radius: var(--radius-sm);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
   overflow-x: auto;
@@ -450,19 +497,21 @@ const METHOD_STYLES = `
 
 .method-threshold-card {
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #FFFFFF;
+  background: var(--surface-secondary);
 }
 
 .method-threshold-range code {
+  font-family: var(--font-mono);
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--ink);
-  background: #F0EFEA;
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
 }
@@ -472,29 +521,39 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding: 0;
+  margin: 0;
 }
 
 .method-limitation-item {
-  border-left: 3px solid var(--brand);
+  border-left: 3px solid var(--accent);
   padding-left: var(--space-4);
 }
 
 .method-limitation-item h4 {
+  font-family: var(--font-heading);
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: 400;
   color: var(--ink);
   margin-bottom: var(--space-1);
+}
+
+[lang="bn"] .method-limitation-item h4,
+.method-limitation-item h4[lang="bn"] {
+  font-family: var(--font-bangla-heading);
+  font-weight: 600;
 }
 
 .method-limitation-item p {
   font-size: var(--text-sm);
   color: var(--ink-muted);
-  line-height: 1.5;
+  line-height: 1.6;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
   .method-page {
-    padding: var(--space-4) var(--space-2) var(--space-8);
+    padding: var(--space-4) var(--space-3) var(--space-8);
   }
 }
 `;
