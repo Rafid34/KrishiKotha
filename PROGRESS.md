@@ -482,6 +482,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-002: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_admin_pipeline.py`
 - R-009: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_voice_gateway.py -k test_admin_key_outside_development`
 - R-017, R-025: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_env_parity.py`
+- R-013: NOT REPRODUCED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_indicators.py -k test_circular_day_of_year_window`
 
 
 

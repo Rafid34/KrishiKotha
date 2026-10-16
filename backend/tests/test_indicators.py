@@ -55,3 +55,31 @@ def test_compute_baseline_constant_series():
     assert mid["tmax_mean"] == 30.0
     assert set(mid["soil_sorted"]) == {0.5}
     assert mid["rain3_sorted"] == sorted(mid["rain3_sorted"])
+
+
+def test_circular_day_of_year_window():
+    from backend.app.services.risk.baseline import _circular_distance, DOY_COUNT, WINDOW_DAYS
+
+    doys = np.arange(1, DOY_COUNT + 1)
+
+    # Window for day 1 (+/- 15 days):
+    # Days 1 to 16 (16 days: day 1 itself + 15 forward)
+    # Days 352 to 366 (15 days: 15 backward across circular wrap)
+    w1 = set(doys[_circular_distance(doys, 1) <= WINDOW_DAYS])
+    expected_w1 = set(range(1, 17)) | set(range(352, 367))
+    assert w1 == expected_w1
+    assert len(w1) == 31
+
+    # Window for day 366 (+/- 15 days):
+    # Days 351 to 366 (16 days: 15 backward + day 366 itself)
+    # Days 1 to 15 (15 days: 15 forward across circular wrap)
+    w366 = set(doys[_circular_distance(doys, 366) <= WINDOW_DAYS])
+    expected_w366 = set(range(351, 367)) | set(range(1, 16))
+    assert w366 == expected_w366
+    assert len(w366) == 31
+
+    # Distance symmetry and constant window size for all DOYs
+    for t in range(1, DOY_COUNT + 1):
+        wt = doys[_circular_distance(doys, t) <= WINDOW_DAYS]
+        assert len(wt) == 2 * WINDOW_DAYS + 1 == 31
+
