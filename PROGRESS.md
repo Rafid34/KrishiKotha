@@ -487,6 +487,11 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-014: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_cmr.py`
 - R-016: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_parser.py`
 - R-011: FIXED, `cd frontend; npm audit --omit=dev`
+- Section-10.2: FIXED, `.\.venv\Scripts\python.exe scripts\verify_endpoints.py` and `.\.venv\Scripts\python.exe -m pipeline.run_pipeline --start 2026-10-12 --end 2026-10-14 --run late` (24 rows in scratch database, status ok)
+
+### Section 10.2 Live Checks & Pipeline Integration Evidence
+- `verify_endpoints.py`: all checks (a-f) passed (POWER daily point, CMR IMERG granule count, earthaccess login, IMERG netcdf4 dataset read, GIBS layer identifiers, CMR SMAP SPL4SMGP latest granule).
+- 3-day live pipeline smoke test (2026-10-12 to 2026-10-14, late run): `Pipeline ok: 24 snapshots, IMERG ok (last 2026-10-14), POWER ok (last 2026-10-12)`. Confirmed `SELECT COUNT(*) FROM risk_snapshots` = 24 in `data/cache/smoke.db`. Scratch database deleted.
 
 
 
