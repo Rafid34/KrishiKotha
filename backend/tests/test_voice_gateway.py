@@ -249,6 +249,35 @@ def test_admin_rejects_everything_when_key_unset(
     assert client.post("/api/admin/broadcast", json=BROADCAST, headers={"X-Admin-Key": ""}).status_code == 401
 
 
+def test_admin_key_outside_development(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    import logging
+    from backend.app.main import create_app
+
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("ADMIN_API_KEY", "change-me")
+    get_settings.cache_clear()
+
+    # In production, change-me is treated as unset -> 401
+    resp = client.post("/api/admin/broadcast", json=BROADCAST, headers={"X-Admin-Key": "change-me"})
+    assert resp.status_code == 401
+
+    # Startup warning is logged on lifespan
+    with caplog.at_level(logging.WARNING):
+        app = create_app()
+        with TestClient(app):
+            pass
+    assert any("ADMIN_API_KEY is unset or using default" in rec.message for rec in caplog.records)
+
+    # In development, change-me is accepted
+    monkeypatch.setenv("APP_ENV", "development")
+    get_settings.cache_clear()
+    resp_dev = client.post("/api/admin/broadcast", json=BROADCAST, headers={"X-Admin-Key": "change-me"})
+    assert resp_dev.status_code == 200
+
+
+
 def test_broadcast_dry_run_counts_and_sends_nothing(
     client: TestClient, snapshots: sessionmaker[Session]
 ) -> None:

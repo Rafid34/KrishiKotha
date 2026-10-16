@@ -36,7 +36,14 @@ def prepare_database() -> None:
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Prepare the database before serving requests."""
     prepare_database()
+    settings = get_settings()
+    if settings.app_env != "development" and settings.admin_api_key in ("", "change-me"):
+        log.warning(
+            "ADMIN_API_KEY is unset or using default 'change-me' outside development (APP_ENV=%s); admin routes will return 401.",
+            settings.app_env,
+        )
     yield
+
 
 
 def create_app() -> FastAPI:

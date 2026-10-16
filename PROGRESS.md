@@ -480,5 +480,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-012: NOT REPRODUCED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_pipeline.py -k test_main_exit_codes`
 - R-001: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_api.py -k test_layers_endpoint`
 - R-002: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_admin_pipeline.py`
+- R-009: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_voice_gateway.py -k test_admin_key_outside_development`
+
 
 

@@ -34,11 +34,15 @@ LEVEL_RANK = {"low": 0, "moderate": 1, "high": 2}
 
 def require_admin_key(x_admin_key: str | None = Header(default=None)) -> None:
     """Reject the request with 401 unless `X-Admin-Key` matches `ADMIN_API_KEY`."""
-    expected = get_settings().admin_api_key
+    settings = get_settings()
+    expected = settings.admin_api_key
+    if settings.app_env != "development" and expected in ("", "change-me"):
+        expected = ""
     if not expected or not x_admin_key or not hmac.compare_digest(
         x_admin_key.encode("utf-8"), expected.encode("utf-8")
     ):
         raise ApiError(401, "unauthorized", "Missing or invalid X-Admin-Key")
+
 
 
 router = APIRouter(
