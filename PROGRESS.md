@@ -496,6 +496,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-008, R-023: FIXED, `.\.venv\Scripts\python.exe -m pipeline.validate report` (Option A wet-day threshold 1.0 mm applied identically to POWER baseline and live IMERG; Sylhet January flood score 58.6; winter High days cut by 50% from 36 to 18; lead time 32 days preserved)
 - R-007: FIXED, `git grep -n "superseded, see Phase 12 and C4 details" PROGRESS.md`
 - R-021: FIXED, `git grep -n "Operational relevance" docs/methodology.md`
+- R-022: FIXED, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_backtest.py -k test_public_citation_present`
 
 ### Section 10.2 Live Checks & Pipeline Integration Evidence
 - `verify_endpoints.py`: all checks (a-f) passed (POWER daily point, CMR IMERG granule count, earthaccess login, IMERG netcdf4 dataset read, GIBS layer identifiers, CMR SMAP SPL4SMGP latest granule).

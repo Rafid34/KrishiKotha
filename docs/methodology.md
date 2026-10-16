@@ -46,10 +46,10 @@
 
 ## Phase 8 decisions (district detail, event replay and backtest)
 
-- Reference flood onset date: 2022-06-16.
+- Reference flood onset date: 2022-06-16 (operational assumption; see verification details below).
 - Public citations for reference onset:
-  1. Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), *Annual Flood Report 2022*, Section 4 (Surma-Kushiyara Basin flood hydrographs: rivers crossed danger levels rapidly between 15-16 June 2022, causing catastrophic inundation of Sylhet and Sunamganj on 16 June 2022).
-  2. UN OCHA / ReliefWeb: "Bangladesh: Floods - Jun 2022" (ReliefWeb Situation Report, 17 June 2022: heavy monsoon flash floods inundated northeastern districts with severe impact starting 16 June 2022).
+  1. Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), *Annual Flood Report 2022*, Section 4: **UNVERIFIED** (document could not be opened or retrieved from the official `ffwc.gov.bd` archive, which only lists reports through 2021; direct requests return an empty SPA client router shell).
+  2. UN Resident Coordinator in Bangladesh, *Bangladesh | 2022 Severe Flash Flood Situation Update #1*, 19 June 2022 ([ReliefWeb](https://reliefweb.int/node/3858093/)): Verified source. Notes that heavy monsoon rains and upstream runoff in India's northeast inundated large parts of Sylhet division, with FFWC reporting ~94% of Sunamganj and >84% of Sylhet submerged, and flight operations at Sylhet Osmani International Airport suspended for three days as flood waters reached the runway. The exact date 2022-06-16 is adopted as an assumed onset date based on peak upstream rainfall at Cherrapunji (16 June) and rapid inundation escalating 16–17 June.
 - Derivation of the five replay step dates from data (Section 9 task 8.4):
   - Step 1 ("Rain begins"): first day rainfall exceeds the 50th baseline percentile of the 3-day sum (`rain3_pctl > 50`) -> `2022-05-15`.
   - Step 2 ("Rain builds"): first day `f_rain7` is at least 60 (`rain7_pctl >= 60`) on or after Step 1 -> `2022-05-15`.
@@ -232,9 +232,15 @@ Sylhet High flood days and share of annual High days per month:
 - **Lead time:** Reference onset minus first High in days (`onset - first_high`). For Sylhet 2022, 2022-06-16 minus 2022-05-15 = 32 days.
 - **False alarm:** High day after 2022-06-30 up to 2022-09-30. This definition is my choice because the spec does not define the flood period; the report also splits High days before onset (22 days), onset to 2022-06-30 (11 days in Run A / 10 days in Run B), and after 2022-06-30 (0 in Run A due to run end date, 9 in Run B).
 
-### Reference onset citation
+### Reference onset citation and verification
 
-> Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), 'Annual Flood Report 2022' & UN OCHA / ReliefWeb 'Bangladesh: Floods - Jun 2022': Surma-Kushiyara river basin crossed danger level with catastrophic inundation of Sylhet on 16 June 2022.
+- **Assumed onset date:** `2022-06-16` (described as an assumption; FFWC 2022 report unverified).
+- **Source 1 (UNVERIFIED):** Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), *Annual Flood Report 2022*, Section 4. Verification attempt: searched official portal (`ffwc.gov.bd`) and online archives; the portal's Annual Flood Report archive only indexes reports through 2021. Direct URL attempts return the default Angular SPA application shell. Marked as **UNVERIFIED**.
+- **Source 2 (VERIFIED):** UN Resident Coordinator in Bangladesh, *Bangladesh | 2022 Severe Flash Flood Office of the UN Resident Coordinator Situation Update #1 (19 June 2022)*, published on ReliefWeb (`https://reliefweb.int/report/bangladesh/bangladesh-2022-severe-flash-flood-office-un-resident-coordinator-situation-update-1-19-june-2022`, node 3858093). Exact supporting statements:
+  - *"Heavy monsoon rains and water from upstream in India's northeast have inundated large parts of the Sylhet division, leaving millions of people marooned and triggering a humanitarian crisis."*
+  - *"According to the Flood Forecasting and Warning Centre (FFWC), around 94 percent of Sunamganj and over 84 percent of Sylhet are submerged."*
+  - *"Flight operations in Sylhet's Osmani International Airport have been suspended for three days as flood water has reached the runway."*
+  - *"Major regional highways, including Sylhet-Sunamganj and Sylhet-Bholaganj, are submerged, and road connectivity has already snapped due to the intensity of flooding."*
 
 ### Plain-words meaning of each result
 

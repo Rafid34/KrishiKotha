@@ -12,9 +12,11 @@ from .risk.scoring import level_for
 
 REFERENCE_ONSET_DEFAULT = date(2022, 6, 16)
 REFERENCE_ONSET_CITATION = (
-    "Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), "
-    "'Annual Flood Report 2022' & UN OCHA / ReliefWeb 'Bangladesh: Floods - Jun 2022': "
-    "Surma-Kushiyara river basin crossed danger level with catastrophic inundation of Sylhet on 16 June 2022."
+    "Assumed onset date: 2022-06-16. "
+    "Source 1: Flood Forecasting and Warning Centre (FFWC), Bangladesh Water Development Board (BWDB), "
+    "'Annual Flood Report 2022' Section 4 (UNVERIFIED: document could not be opened from ffwc.gov.bd). "
+    "Source 2: UN Resident Coordinator in Bangladesh, 'Bangladesh | 2022 Severe Flash Flood Situation Update #1' (19 June 2022, "
+    "https://reliefweb.int/node/3858093/): FFWC reported ~94% Sunamganj and >84% Sylhet submerged following mid-June deluge."
 )
 
 STEP_LABELS: dict[int, dict[str, str]] = {
