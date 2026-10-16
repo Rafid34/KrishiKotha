@@ -325,3 +325,25 @@ def test_snapshot_mode_blocks_network_clients(monkeypatch: pytest.MonkeyPatch, t
     finally:
         monkeypatch.setenv("DATA_MODE", "live")
         get_settings.cache_clear()
+
+
+def test_main_exit_codes(session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(pipeline_module, "SessionLocal", session_factory)
+
+    class DummyRecord:
+        def __init__(self, status: str):
+            self.status = status
+            self.detail = {
+                "snapshots_written": 16,
+                "sources": {
+                    "IMERG": {"status": "ok", "last_data_date": "2022-05-16"},
+                    "POWER": {"status": "ok", "last_data_date": "2022-05-16"},
+                },
+            }
+
+    monkeypatch.setattr(pipeline_module, "run_pipeline", lambda *args, **kwargs: DummyRecord("partial"))
+    assert pipeline_module.main(["--start", "2022-05-15", "--end", "2022-05-16"]) == 1
+
+    monkeypatch.setattr(pipeline_module, "run_pipeline", lambda *args, **kwargs: DummyRecord("ok"))
+    assert pipeline_module.main(["--start", "2022-05-15", "--end", "2022-05-16"]) == 0
+
