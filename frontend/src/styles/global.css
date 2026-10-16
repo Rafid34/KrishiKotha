@@ -361,3 +361,18 @@ svg {
   box-shadow: var(--shadow-md);
   border-radius: var(--radius-md);
 }
+
+/* Leaflet zoom controls 44px touch targets & dark styling */
+.leaflet-control-zoom a {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  background: #292524 !important;
+  color: #E7E5E4 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: #383330 !important;
+  color: #D4F268 !important;
+}
+

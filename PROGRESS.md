@@ -534,3 +534,12 @@ Deviations from DESIGN_REFERENCE.json logged per user instructions and precedenc
   - *Simulator Advisory Diagnosis Panel*: Dark surface cards (`#1C1917` and `#292524`), 24px corner radii, Newsreader serif underlying score values, and fully rounded quick-fill chips with >= 44px tap targets.
   - *Method & Data Page*: 24px corner radii on all cards, dark monospace `<pre>` code blocks (`#0C0A09` bg, `#E7E5E4` text), high-contrast datasets table with Acid Lime links, and procedural serrated section divider below the header.
 
+- **T5: Verification, Polish & 360px Mobile Audit**:
+  - *Verification Suite*: Frontend test suite (77 tests across 11 test files) and production build (`npm run build`) both pass cleanly with zero errors.
+  - *Contrast Check*: `python scripts/contrast_check.py` evaluated all token pairs plus 4% noise overlay pairings; 100% passed with WCAG AA ratios between 5.48:1 and 15.73:1 (0 failures).
+  - *No External Fonts/CDNs*: Grep verification confirmed zero occurrences of `googleapis`, `gstatic`, or `cdn.` across `frontend/src` and `frontend/index.html`. Standard OSM base tiles rendered inside rounded card with solid dark pill markers, strictly meeting Conflict Resolution 5.
+  - *Offline Verification*: `python scripts/verify_offline.py` passed with 0 outbound network attempts in snapshot mode, confirming zero style or font requests leave the machine.
+  - *360px Viewport Audit*: All 4 routes (Dashboard, Replay, Simulator, Method) verified with zero horizontal scroll (`scrollWidth == 360px`). All interactive tap targets meet or exceed 44px.
+  - *Screenshots & Bangla Glyphs*: High-resolution desktop (1280px) and mobile (360px) screenshots captured and saved to `docs/screens/` for all 4 routes in English and Bangla. Verified zero tofu and zero unicode replacement characters across all views.
+
+

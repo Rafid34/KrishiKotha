@@ -247,6 +247,9 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .method-header {
@@ -349,6 +352,9 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .method-section {
@@ -359,6 +365,9 @@ const METHOD_STYLES = `
   border: 1px solid var(--border);
   border-radius: 24px;
   padding: var(--space-6);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .method-section h2 {
@@ -385,9 +394,13 @@ const METHOD_STYLES = `
 
 .method-table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-secondary);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .method-table {
@@ -452,6 +465,9 @@ const METHOD_STYLES = `
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .method-formula-card {
@@ -459,6 +475,9 @@ const METHOD_STYLES = `
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   background: var(--surface-secondary);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .method-formula-card h3 {
@@ -487,6 +506,9 @@ const METHOD_STYLES = `
   overflow-x: auto;
   margin: 0;
   white-space: pre;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .method-thresholds-grid {

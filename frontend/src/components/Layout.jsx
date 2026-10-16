@@ -127,6 +127,8 @@ if (style) {
   color: var(--foreground);
   text-decoration: none;
   flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
 }
 .layout__brand:hover,
 .layout__brand:focus-visible {

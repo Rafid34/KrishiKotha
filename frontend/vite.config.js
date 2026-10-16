@@ -9,6 +9,10 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': 'http://localhost:8000' },
   },
+  preview: {
+    port: 5173,
+    proxy: { '/api': 'http://localhost:8000' },
+  },
   test: {
     environment: 'node',
     include: ['src/__tests__/**/*.test.{js,jsx}'],

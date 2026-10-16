@@ -99,10 +99,10 @@ export default function RiskMap({
         attributionControl={true}
         id="district-risk-map"
       >
-        {/* Dark Matter Carto basemap that reads cleanly on dark UI */}
+        {/* OpenStreetMap base tiles inside rounded card */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={18}
         />
 
@@ -268,10 +268,16 @@ if (style) {
 .overlay-control__option {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 28px;
+  gap: 8px;
+  min-height: 44px;
   cursor: pointer;
   color: var(--ink-muted);
+}
+.overlay-control__option input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent);
 }
 .overlay-control__option:hover {
   color: var(--foreground);
