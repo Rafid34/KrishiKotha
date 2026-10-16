@@ -106,8 +106,15 @@ async def sms_inbound(request: Request, db: Session = Depends(get_db)) -> Respon
 def _voice_audio_url(db: Session, from_number: str) -> str | None:
     """Audio URL for the caller's current advice (help message when not registered)."""
     subscriber = (
-        db.query(Subscriber).filter_by(phone_hash=hash_phone(from_number), active=True).first()
+        db.query(Subscriber)
+        .filter(
+            (Subscriber.phone_hash == hash_phone(from_number))
+            | (Subscriber.phone_e164 == from_number),
+            Subscriber.active == True,
+        )
+        .first()
     )
+
     if subscriber is None:
         text, rule_id = compose_advice("help").text_bn, "help"
     else:

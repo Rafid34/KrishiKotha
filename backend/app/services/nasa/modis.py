@@ -27,7 +27,17 @@ from .offline import ensure_online
 
 MODIS_CACHE_DIR = CACHE_DIR / "modis"
 PENDING_TASKS_FILE = MODIS_CACHE_DIR / "pending_tasks.json"
-APPEEARS_BASE = "https://appeears.earthdatacloud.nasa.gov/api/"
+
+
+def appeears_base() -> str:
+    settings = get_settings()
+    base = getattr(settings, "appeears_api_base", "https://appeears.earthdatacloud.nasa.gov/api")
+    return f"{base.rstrip('/')}/"
+
+
+
+APPEEARS_BASE = appeears_base()
+
 
 PRODUCT = "MOD13Q1.061"
 LAYER = "_250m_16_days_NDVI"
@@ -59,7 +69,7 @@ def login(client: httpx.Client) -> str:
     if not settings.earthdata_username or not settings.earthdata_password:
         raise ModisError("EARTHDATA_USERNAME/EARTHDATA_PASSWORD not set")
     resp = client.post(
-        f"{APPEEARS_BASE}login", auth=(settings.earthdata_username, settings.earthdata_password)
+        f"{appeears_base()}login", auth=(settings.earthdata_username, settings.earthdata_password)
     )
     if resp.status_code != 200:
         raise ModisError(f"AppEEARS login failed: HTTP {resp.status_code}")
@@ -93,7 +103,7 @@ def submit_task(
             ],
         },
     }
-    resp = client.post(f"{APPEEARS_BASE}task", headers={"Authorization": f"Bearer {token}"}, json=payload)
+    resp = client.post(f"{appeears_base()}task", headers={"Authorization": f"Bearer {token}"}, json=payload)
     if resp.status_code not in (200, 201, 202):
         raise ModisError(f"AppEEARS task submission failed: HTTP {resp.status_code}: {resp.text[:200]}")
     task_id = resp.json().get("task_id")
@@ -109,7 +119,7 @@ def task_status(task_id: str, token: str, *, client: httpx.Client) -> str:
     has finished it answers HTTP 303 (redirect to `/task/{id}`) with `"status": "done"` in the body.
     The redirect is deliberately not followed; the body already says everything needed.
     """
-    resp = client.get(f"{APPEEARS_BASE}status/{task_id}", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(f"{appeears_base()}status/{task_id}", headers={"Authorization": f"Bearer {token}"})
     if resp.status_code not in (200, 303):
         raise ModisError(f"AppEEARS status check failed: HTTP {resp.status_code}")
     try:
@@ -124,7 +134,7 @@ def task_status(task_id: str, token: str, *, client: httpx.Client) -> str:
 
 def download_point_csv(task_id: str, token: str, *, client: httpx.Client) -> list[dict[str, str]]:
     """Download the task's point-results CSV and return it as a list of row dicts."""
-    resp = client.get(f"{APPEEARS_BASE}bundle/{task_id}", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get(f"{appeears_base()}bundle/{task_id}", headers={"Authorization": f"Bearer {token}"})
     if resp.status_code != 200:
         raise ModisError(f"AppEEARS bundle listing failed: HTTP {resp.status_code}")
     files = resp.json().get("files", [])
@@ -134,7 +144,7 @@ def download_point_csv(task_id: str, token: str, *, client: httpx.Client) -> lis
     # File downloads redirect to cloud storage; httpx drops the Authorization header on the
     # cross-origin hop, so following the redirect does not leak the token.
     file_resp = client.get(
-        f"{APPEEARS_BASE}bundle/{task_id}/{csv_file['file_id']}",
+        f"{appeears_base()}bundle/{task_id}/{csv_file['file_id']}",
         headers={"Authorization": f"Bearer {token}"},
         follow_redirects=True,
     )

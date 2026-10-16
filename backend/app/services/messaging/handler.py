@@ -8,19 +8,20 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from ...config import get_settings
 from ...models import MessageLog, RiskSnapshot, Subscriber
 from ..advice.composer import compose_advice
 from ..advice.rules import select_advice_rule
 from ..advice.stages import get_crop_stage
 from .parser import parse_message
 
-PHONE_SALT = "krishi_kotha_salt"
-
 
 def hash_phone(phone_e164: str) -> str:
     """Compute SHA-256 with salt for subscriber phone lookup (Section 7.1)."""
+    salt = get_settings().phone_hash_salt
     normalized = phone_e164.strip()
-    return hashlib.sha256(f"{PHONE_SALT}:{normalized}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{salt}{normalized}".encode("utf-8")).hexdigest()
+
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,12 @@ def handle_inbound_sms(
     parsed = parse_message(body)
     phone_hash = hash_phone(from_number)
 
-    subscriber = db.query(Subscriber).filter_by(phone_hash=phone_hash).first()
+    subscriber = (
+        db.query(Subscriber)
+        .filter((Subscriber.phone_hash == phone_hash) | (Subscriber.phone_e164 == from_number))
+        .first()
+    )
+
 
     if parsed.command == "register":
         assert parsed.district_id is not None

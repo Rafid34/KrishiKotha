@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     )
 
     app_env: str = "development"
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
     database_url: str = f"sqlite:///{(REPO_ROOT / 'data' / 'krishi_kotha.db').as_posix()}"
     admin_api_key: str = "change-me"
     cors_origins: str = "http://localhost:5173"
@@ -30,6 +32,8 @@ class Settings(BaseSettings):
     earthdata_password: str = ""
     power_api_base: str = "https://power.larc.nasa.gov/api"
     cmr_base: str = "https://cmr.earthdata.nasa.gov/search"
+    appeears_api_base: str = "https://appeears.earthdatacloud.nasa.gov/api"
+    gibs_wmts_base: str = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best"
     bbox_west: float = 88.0
     bbox_south: float = 20.5
     bbox_east: float = 92.7
@@ -43,6 +47,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
     public_base_url: str = "http://localhost:8000"
+    phone_hash_salt: str = "change-me"
+
 
     @property
     def bbox(self) -> tuple[float, float, float, float]:

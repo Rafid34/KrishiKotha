@@ -16,8 +16,10 @@ load_dotenv(ROOT / ".env")
 
 POWER = os.environ.get("POWER_API_BASE", "https://power.larc.nasa.gov/api")
 CMR = os.environ.get("CMR_BASE", "https://cmr.earthdata.nasa.gov/search")
-GIBS_CAPS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities"
+GIBS = os.environ.get("GIBS_WMTS_BASE", "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best")
+GIBS_CAPS = f"{GIBS}/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities"
 SYLHET = (24.8949, 91.8687)
+
 TIMEOUT = httpx.Timeout(60.0)
 
 state: dict = {}
