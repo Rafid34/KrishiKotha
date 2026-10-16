@@ -475,3 +475,4 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-019: FIXED, `cd frontend; npm test -- src/__tests__/chart_summaries.test.jsx`
 - R-020: FIXED, `cd frontend; npm test -- src/__tests__/error_states.test.jsx`
 - R-018: FIXED, `cd frontend; npm test -- src/__tests__/default_date.test.jsx` (demo script must press the "June 2022 flood demo" button)
+- censored-lead-time (F7): FIXED, `cd frontend; npm test -- src/__tests__/censored_lead_time.test.jsx`

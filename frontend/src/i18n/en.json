@@ -69,6 +69,8 @@
     "pause": "Pause",
     "step": "Step",
     "leadTimeBanner": "Warning came {days} days before the flood",
+    "leadTimeBannerCensored": "Lead time is at least {days} days (from window start)",
+    "leadTimeDescCensored": "Flood risk was already High on the first day of the window ({windowStart}) and that the lead time is therefore at least {days} days, measured from the window start.",
     "fixedThresholdsNote": "Thresholds were fixed before testing and not tuned on this event. Data from NASA GPM IMERG and POWER.",
     "chartSummary": "Event summary: Total rainfall {totalRain} mm, peak rainfall {peakRain} mm on {peakDate}, peak flood score {peakScore} on {peakScoreDate}.",
     "milestoneModerate": "First Moderate",

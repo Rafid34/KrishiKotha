@@ -15,11 +15,11 @@ import { useLang, t } from '../i18n/index.jsx';
 import { formatNumber, formatDate } from '../utils/format.js';
 import { getBacktestSylhet } from '../api/client.js';
 
-export default function EventReplay() {
+export default function EventReplay({ initialData = null } = {}) {
   const { lang } = useLang();
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -28,6 +28,7 @@ export default function EventReplay() {
 
   // Load backtest replay data from /api/backtest/sylhet-2022
   const loadData = useCallback(() => {
+    if (initialData) return;
     setLoading(true);
     setError(null);
     getBacktestSylhet()
@@ -47,11 +48,23 @@ export default function EventReplay() {
         setError(err.message || 'Failed to load replay data');
         setLoading(false);
       });
-  }, []);
+  }, [initialData]);
 
   useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+      setLoading(false);
+      const series = initialData.series || [];
+      const onsetIdx = series.findIndex(p => p.date === initialData.reference_onset);
+      if (onsetIdx !== -1) {
+        setCurrentDateIndex(onsetIdx);
+      } else if (series.length > 0) {
+        setCurrentDateIndex(series.length - 1);
+      }
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [initialData, loadData]);
 
   // Play/Pause interval timer
   useEffect(() => {
@@ -83,6 +96,8 @@ export default function EventReplay() {
   const leadTimeDays = data?.lead_time_days ?? 32;
   const currentPoint = series[currentDateIndex] || null;
   const currentDate = currentPoint?.date || '';
+  const firstSeriesDate = series.length > 0 ? series[0].date : null;
+  const isCensored = Boolean(data?.first_high && firstSeriesDate && data.first_high === firstSeriesDate);
 
   // Formatted chart points and data statistics (R-019)
   const { chartData, totalRain, peakRain, peakRainDate, peakScore, peakScoreDate } = useMemo(() => {
@@ -450,12 +465,18 @@ export default function EventReplay() {
           </div>
           <div className="replay-summary-banner__text">
             <h3 className="replay-summary-banner__title" lang={lang === 'bn' ? 'bn' : undefined}>
-              {t('replay.leadTimeBanner', lang).replace('{days}', formatNumber(leadTimeDays, 0, lang))}
+              {isCensored
+                ? t('replay.leadTimeBannerCensored', lang).replace('{days}', formatNumber(leadTimeDays, 0, lang))
+                : t('replay.leadTimeBanner', lang).replace('{days}', formatNumber(leadTimeDays, 0, lang))}
             </h3>
             <p className="replay-summary-banner__desc">
-              {lang === 'bn'
-                ? `প্রথম উচ্চ ঝুঁকি শুরু হয় ${data.first_high ? formatDate(data.first_high, lang) : ''} তারিখে এবং সরকারি বন্যা শুরু ১৬ জুন ২০২২-এ।`
-                : `First High flood level was reached on ${data.first_high || '—'}, providing ${leadTimeDays} days of actionable lead time before the 16 June 2022 onset.`}
+              {isCensored
+                ? t('replay.leadTimeDescCensored', lang)
+                    .replace('{windowStart}', firstSeriesDate || '2022-05-15')
+                    .replace('{days}', formatNumber(leadTimeDays, 0, lang))
+                : (lang === 'bn'
+                    ? `প্রথম উচ্চ ঝুঁকি শুরু হয় ${data.first_high ? formatDate(data.first_high, lang) : ''} তারিখে এবং সরকারি বন্যা শুরু ১৬ জুন ২০২২-এ।`
+                    : `First High flood level was reached on ${data.first_high || '—'}, providing ${leadTimeDays} days of actionable lead time before the 16 June 2022 onset.`)}
             </p>
           </div>
         </div>

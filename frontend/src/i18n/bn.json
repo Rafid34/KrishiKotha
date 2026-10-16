@@ -69,6 +69,8 @@
     "pause": "থামান",
     "step": "ধাপ",
     "leadTimeBanner": "বন্যার {days} দিন আগেই সতর্কতা পাওয়া যায়",
+    "leadTimeBannerCensored": "সতর্কতার সময়কাল অন্তত {days} দিন (উইন্ডো শুরুর তারিখ থেকে পরিমাপকৃত)",
+    "leadTimeDescCensored": "উইন্ডোর প্রথম দিনেই ({windowStart}) বন্যার ঝুঁকি ইতিমধ্যেই উচ্চ ছিল এবং তাই সতর্কতার সময়কাল অন্তত {days} দিন, যা উইন্ডো শুরুর তারিখ থেকে পরিমাপকৃত।",
     "fixedThresholdsNote": "পরীক্ষার আগেই থ্রেশহোল্ড নির্ধারিত ছিল এবং এই ঘটনার জন্য পরিবর্তন করা হয়নি। NASA GPM IMERG ও POWER-এর তথ্য।",
     "chartSummary": "ঘটনা সারসংক্ষেপ: মোট বৃষ্টিপাত {totalRain} মিমি, সর্বোচ্চ বৃষ্টি {peakRain} মিমি ({peakDate}), সর্বোচ্চ বন্যা স্কোর {peakScore} ({peakScoreDate})।",
     "milestoneModerate": "প্রথম মাঝারি ঝুঁকি",
