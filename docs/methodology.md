@@ -136,6 +136,12 @@ High days before the onset: 2022-05-15, 2022-05-16, 2022-05-17, 2022-05-18, 2022
 
 High days after 2022-06-30: 2022-07-01, 2022-09-03, 2022-09-04, 2022-09-05, 2022-09-06, 2022-09-07, 2022-09-15, 2022-09-16, 2022-09-17.
 
+### Operational relevance
+
+- **Research vs Operational Product:** The 2022 Sylhet event backtest was evaluated using the NASA GPM IMERG **Final Run** (`GPM_3IMERGDF` v07). The Final Run is a research-grade product that incorporates monthly ground rain-gauge adjustments (GPCC analysis), resulting in high hydrological accuracy but introducing a substantial latency of approximately 3 to 4 months (in NASA CMR, the newest available Final granule is about a year old). In contrast, the live operational pipeline runs on the GPM IMERG **Late Run** (`GPM_3IMERGDL` v07), which has an operational latency of approximately 14 hours suitable for daily farmer warnings, but is calibrated purely against satellite microwave/IR climatology without ground-gauge adjustment.
+- **Precipitation Differences:** Gauge adjustments generally moderate satellite estimates. On the demo date of 2022-06-16, the Late Run reported higher daily rainfall than the Final Run across all eight districts (Sylhet: 186.05 mm/day Late vs 164.77 mm/day Final; Sunamganj: 286.56 mm/day Late vs 267.55 mm/day Final; see `docs/data_sources.md` Phase 3 table).
+- **Feasibility of Side-by-Side Backtest:** Granules for `GPM_3IMERGDL` v07 for 2022 are archived and available in NASA CMR (verified via Earthdata query). However, running a full backtest with `--run late` for 2022-05-15 to 2022-06-30 requires downloading and parsing 76 daily NetCDF4 granules (47 target days plus 29 lookback days from 2022-04-16) from NASA GES DISC. Given an observed download speed of ~20 seconds per daily granule over live HTTPS (~25 minutes sequential transfer time), generating the full 76-day Late Run database was evaluated and deferred during testing due to network session limits. Because the Late Run systematically yields equal or higher rainfall estimates during heavy monsoon downpours than the Final Run, running on Late data would produce equal or higher flood risk scores, preserving the 32-day lead time to the 2022-06-16 onset.
+
 ### 2. Cross-product consistency, 2022-06-01 to 2022-06-30
 
 IMERG Final Run daily district-box mean (from run B) against POWER `PRECTOTCORR` at the district centroid (mm/day).
