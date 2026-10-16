@@ -513,3 +513,9 @@ Deviations from DESIGN_REFERENCE.json logged per user instructions and precedenc
   - *Bangla Typography (Precedence Rule 3)*: Newsreader and Instrument Sans do not include Bengali glyphs. Self-hosted Noto Serif Bengali (headings, weight 600) and Noto Sans Bengali (body, weight 400+) were adopted. All italics and letter-spacing are removed for Bangla text. Bangla body text is enforced at >= 18px with line-height >= 1.6. Italic emphasis is applied to English only.
   - *Pure Black Prohibition*: Adhered to the reference rule never to use pure black (`#000000`), using the warm stone black (`#0C0A09`) throughout.
   - *Grid Pattern Isolation*: The 40px background grid pattern at 3% opacity is applied strictly to the main viewport body background, never behind text-heavy panels or cards.
+
+- **T2: Layout Shell & Navigation**:
+  - *Dashboard Layout Precedence*: In accordance with the prompt's Precedence Rule, the application retains the Section 8.2 dashboard layouts rather than the landing page structure from DESIGN_REFERENCE.json (no hero section, no social proof avatars, no showcase grid).
+  - *Top Bar & Pill Navigation*: Implemented fixed glassmorphism header with 8px blur, stone black surface (`rgba(12,10,9,0.85)`), pill-shaped navigation container with 300ms transition to off-white background / stone black text for active links, language toggle, and an Acid Lime (`#D4F268`) primary CTA button.
+  - *Mobile Responsive Accommodation (360px)*: On screens below 640px, the brand text collapses to the circular logo and the primary CTA tucks into the compact view to guarantee zero horizontal scroll and touch targets >= 44px.
+  - *Serrated Dividers*: Created procedural `SerratedDivider` using `radial-gradient` mask for section transitions, marked `aria-hidden="true"`.
