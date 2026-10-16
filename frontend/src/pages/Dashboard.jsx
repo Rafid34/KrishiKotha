@@ -6,14 +6,11 @@ import DataFreshness from '../components/DataFreshness.jsx';
 import { useLang, t } from '../i18n/index.jsx';
 import { getDistricts, getRisk } from '../api/client.js';
 
-// Demo date — 2022-06-16 is the key event date in the snapshots
-const DEMO_DATE = '2022-06-16';
-
-export default function Dashboard({ initialDistrictError = null, initialRiskError = null } = {}) {
+export default function Dashboard({ initialDate = '', initialDistrictError = null, initialRiskError = null } = {}) {
   const { lang } = useLang();
 
   const [hazard, setHazard] = useState('flood');
-  const [date, setDate] = useState(DEMO_DATE);
+  const [date, setDate] = useState(initialDate);
   const [districts, setDistricts] = useState([]);
   const [districtError, setDistrictError] = useState(initialDistrictError);
   const [riskResponse, setRiskResponse] = useState(null);
@@ -43,8 +40,14 @@ export default function Dashboard({ initialDistrictError = null, initialRiskErro
   const fetchRisk = useCallback(() => {
     setLoading(true);
     setError(null);
-    getRisk({ date })
-      .then(data => { setRiskResponse(data); setLoading(false); })
+    getRisk(date ? { date } : {})
+      .then(data => {
+        setRiskResponse(data);
+        if (!date && data?.date) {
+          setDate(data.date);
+        }
+        setLoading(false);
+      })
       .catch(err => { setError(err.message || 'Failed to load risk data'); setLoading(false); });
   }, [date]);
 
@@ -103,6 +106,14 @@ export default function Dashboard({ initialDistrictError = null, initialRiskErro
                 className="dashboard__date-input"
                 aria-label={t('dashboard.datePicker', lang)}
               />
+              <button
+                type="button"
+                className="dashboard__demo-pick-btn"
+                onClick={() => setDate('2022-06-16')}
+                title={lang === 'bn' ? '১৬ জুন ২০২২ বন্যা ডেমো' : 'June 2022 flood demo'}
+              >
+                {lang === 'bn' ? 'জুন ২০২২ বন্যা ডেমো' : 'June 2022 flood demo'}
+              </button>
             </div>
           </div>
 
@@ -243,6 +254,23 @@ style.textContent = `
   outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
+.dashboard__demo-pick-btn {
+  padding: 4px 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--ink);
+  min-height: 44px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+}
+.dashboard__demo-pick-btn:hover {
+  background: var(--surface-alt);
+  border-color: var(--brand);
+}
 
 /* Body: map + panel */
 .dashboard__body {
@@ -258,7 +286,7 @@ style.textContent = `
   overflow-y: auto;
 }
 
-/* â‰¥1024px: side-by-side, 65/35 split */
+/* >=1024px: side-by-side, 65/35 split */
 @media (min-width: 1024px) {
   .dashboard__body {
     grid-template-columns: 65fr 35fr;

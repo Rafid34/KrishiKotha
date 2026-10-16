@@ -8,9 +8,6 @@ import { hazardLabel } from '../utils/risk.js';
 import { playAudio } from '../utils/audio.js';
 import { formatNumber, formatDate } from '../utils/format.js';
 
-// Default demo date for event reconstruction & testing
-const DEMO_DATE = '2022-06-16';
-
 // Client-side dictionary matching backend parser.py tokens
 const DISTRICT_MAP = {
   sylhet: 'sylhet',
@@ -75,13 +72,13 @@ function parseSmsText(raw) {
  * - AdviceCard displaying Bangla and English text and rule id
  * - Mandatory disclaimer
  */
-export default function Simulator() {
+export default function Simulator({ initialDate = '' } = {}) {
   const { lang } = useLang();
 
   // State
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [simDate, setSimDate] = useState(DEMO_DATE);
+  const [simDate, setSimDate] = useState(initialDate);
   const [loading, setLoading] = useState(false);
   const [callNotice, setCallNotice] = useState(null);
   const [districts, setDistricts] = useState([]);
@@ -90,6 +87,19 @@ export default function Simulator() {
   const [diagnosis, setDiagnosis] = useState(null);
 
   const [districtError, setDistrictError] = useState(null);
+
+  // Default to the date returned by GET /api/risk without date parameter
+  useEffect(() => {
+    if (!initialDate) {
+      getRisk()
+        .then(res => {
+          if (res?.date) {
+            setSimDate(prev => prev || res.date);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialDate]);
 
   // Load districts metadata for labels
   const loadDistricts = useCallback(() => {
@@ -281,6 +291,15 @@ export default function Simulator() {
               aria-label={t('simulator.dateLabel', lang)}
             />
           </label>
+
+          <button
+            type="button"
+            className="simulator-demopick-btn"
+            onClick={() => setSimDate('2022-06-16')}
+            title={lang === 'bn' ? '১৬ জুন ২০২২ বন্যা ডেমো' : 'June 2022 flood demo'}
+          >
+            {lang === 'bn' ? 'জুন ২০২২ বন্যা ডেমো' : 'June 2022 flood demo'}
+          </button>
 
           {messages.length > 0 && (
             <button
@@ -620,6 +639,23 @@ if (style && !document.getElementById('simulator-page-styles')) {
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink-muted);
+}
+
+.simulator-demopick-btn {
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+}
+.simulator-demopick-btn:hover {
+  background: var(--surface-alt);
+  border-color: var(--brand);
 }
 
 .simulator-date-input {
