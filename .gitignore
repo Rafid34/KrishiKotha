@@ -11,15 +11,24 @@ __pycache__/
 # Data
 data/cache/
 data/audio/
+data/downloads/
 *.db
+*.sqlite
 *.sqlite3
+*.nc
+*.nc4
+*.h5
+*.hdf
 
 # Node
 node_modules/
 frontend/dist/
 
-# Editors and OS
+# Editors, OS, and Agent scratch
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+.agents/
+skills-lock.json
+
