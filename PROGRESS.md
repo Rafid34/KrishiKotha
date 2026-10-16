@@ -10,7 +10,7 @@
 | 5: Pipeline runner, snapshots, read API | Done | Verified: Final Run 2022-05-15 to 2022-06-30 status ok (376 rows); `/api/risk?date=2022-06-16` returns 8 districts; 58 tests pass (14 in `test_api.py`); snapshot mode with network blocked serves `/api/risk` and made 0 outbound attempts. Patch applied afterwards (see Phase 5 patch): 61 tests pass. Spec Section 7.2 `date` param on `GET /api/risk/{district_id}` implemented: 62 tests pass. |
 | 6: Advice engine, parser, SMS simulator API | Done | Verified: 140 tests pass (33 in `test_advice.py`, 38 in `test_parser.py`, 16 in `test_api.py`); verbatim Bangla templates from Section 7.4; 134-character limit enforced with `MessageLengthExceededError`; `POST /api/sim/sms` returns Bangla replies (welcome + advice) and logs 2 messages; observed conditions only, no forecasts. |
 | 7: Frontend scaffold and risk map dashboard | Done | Verified: 22 vitest tests pass; `npm run build` succeeds; map renders 8 district markers with OpenStreetMap tiles; date 2022-06-16 with flood hazard shows Sylhet High (score 98.01, red marker); RiskBadge and Legend follow Section 8.4 (icon shape + colour + text label); fonts self-hosted (@fontsource Inter & Noto Sans Bengali); 360 px mobile width verified with zero horizontal overflow. |
-| 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
+| 8: District detail and event replay | Done | Verified: 147 backend tests pass (7 in `test_backtest.py`); 25 vitest tests pass; `npm run build` succeeds; `GET /api/backtest/sylhet-2022` returns Section 7.2 shape; five replay step dates derived directly from data using task 8.4 rules with zero hard-coded dates and zero threshold tuning; measured lead time 14 days (superseded, see Phase 12 and C4 details) (>= 3-day target); `EventReplay` renders 5 step chips, interactive date slider with play/pause, Recharts timeline chart with milestone markers, and lead time summary box; `DistrictPanel` renders score cards, `TrendChart` (60-day rainfall bars, soil wetness line, 90th percentile baseline line), `FactorBars` (from `/explain`), and live crop advice. |
 | 9: Farmer simulator UI | Done | Verified: 147 backend tests pass (18 in `test_api.py`); 32 vitest tests pass (7 in `simulator.test.jsx`); `npm run build` succeeds; `PhoneMockup` renders centered feature phone mockup (~320 px wide) with monochrome LCD screen, keypad, input box, Send button, Call button; Bangla text guaranteed >= 18 px in Noto Sans Bengali (`lang="bn"`); Quick-fill buttons for `SYLHET AMAN`, `KHULNA BORO`, `RAJSHAHI AMAN`, `HELP`, `STOP`; typing `SYLHET AMAN` on demo date 2022-06-16 returns welcome and flood advice messages; side panel renders Rule ID (`flood_high_early`), triggering hazard (`Flood` / High), and underlying scores (Drought 0.9, Flood 98.0, Salinity 0.0); `AdviceCard` renders Bangla (>=18px) and English text with audio button; invalid input returns help message; zero horizontal overflow at 360 px width. |
 | 10: SMAP, MODIS NDVI, GIBS overlays | Done | Verified: 167 backend tests pass; 45 vitest tests pass; `npm run build` succeeds; real SPL4SMGP v008 file inspected first (`Geophysical_Data/sm_rootzone_pctl`, EASE-Grid 2.0); live run 2026-10-10 to 2026-10-13 shows `soil_source: SMAP_L4` for 5 districts and the POWER fallback (shown in UI) for 3 water-cell districts; MOD13Q1.061 NDVI anomaly used for 32 of 32 district-days with product version in the panel; GIBS ids confirmed from GetCapabilities; overlay toggle with attribution and no-imagery fallback; `/api/sources` lists SMAP and MODIS. See Phase 10 details. |
 | 11: Voice and Twilio gateway | Done | Verified: 187 backend tests pass (20 new in `test_voice_gateway.py`); 50 vitest tests pass (5 new in `audio.test.js`); `npm run build` succeeds; real gTTS call returned 72 KB `audio/mpeg` for the Sylhet advice; with `TWILIO_ENABLED=false` app startup imports neither `twilio` nor `gtts` (subprocess test); `POST /api/admin/broadcast` without `X-Admin-Key` returns 401, with the key and no `dry_run` it is a dry run (`sent: 0`, nothing logged or sent); Twilio webhooks tested with real signature validation (403 on bad signature) using a stubbed TTS. Manual checks not done: browser playback of the Call button, and a real Twilio SMS round trip (no verified number or tunnel available). See Phase 11 details. |
@@ -298,8 +298,8 @@ Implemented Phase 8: District detail and event replay (Sections 7.2, 8.2, 8.4, 9
     - Step 3 ("Heavy rain"): first day flood level is Moderate (`flood_level == "moderate"`, score 40–69.99) on or after Step 2 -> `2022-05-25`.
     - Step 4 ("Extreme rain"): first day flood level is High (`flood_level == "high"`, score >= 70) on or after Step 3 -> `2022-06-02`.
     - Step 5 ("Flood"): reference flood onset date -> `2022-06-16`.
-  - Milestone dates: `first_moderate = "2022-05-25"`, `first_high = "2022-06-02"`.
-  - Measured lead time: 14 days (`(2022-06-16 - 2022-06-02).days = 14`).
+  - Milestone dates: `first_moderate = "2022-05-25"`, `first_high = "2022-06-02"` (superseded, see Phase 12 and C4 details).
+  - Measured lead time: 14 days (superseded, see Phase 12 and C4 details) (`(2022-06-16 - 2022-06-02).days = 14`).
   - Strict preservation of fixed thresholds: no thresholds tuned on the Sylhet 2022 event.
   - Reference onset citation: Flood Forecasting and Warning Centre (FFWC) BWDB *Annual Flood Report 2022* & UN OCHA / ReliefWeb *Bangladesh: Floods - Jun 2022*.
 - **`backend/app/routers/backtest.py`**:
@@ -329,7 +329,7 @@ Implemented Phase 8: District detail and event replay (Sections 7.2, 8.2, 8.4, 9
     - 5 step chips with active highlight as timeline advances.
     - Interactive timeline player with range slider and Play/Pause animation.
     - Recharts timeline chart with rainfall bars, flood score line, threshold lines (Moderate 40, High 70), milestone vertical markers (`first_moderate`, `first_high`, reference onset `2022-06-16`), and current slider date marker.
-    - Summary box with lead time banner ("Warning came 14 days before the flood" from API), fixed thresholds explanation, reference citation, and disclaimer.
+    - Summary box with lead time banner ("Warning came 14 days before the flood" from API; superseded, see Phase 12 and C4 details), fixed thresholds explanation, reference citation, and disclaimer.
 - **`frontend/src/i18n/en.json` & `bn.json`**:
   - Added translation keys for FactorBars, TrendChart, EventReplay, and DistrictPanel.
 - **`frontend/src/__tests__/replay.test.js`**:
@@ -456,6 +456,11 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - **Cross-product consistency (June 2022, 30 days):**
   - Sylhet: Pearson $r = 0.652$, mean absolute difference 22.94 mm/day, mean IMERG minus POWER -6.73 mm/day, IMERG total 1352.0 mm, POWER total 1554.0 mm
   - Rajshahi: Pearson $r = 0.555$, mean absolute difference 4.65 mm/day, mean IMERG minus POWER -1.00 mm/day, IMERG total 126.6 mm, POWER total 156.5 mm
+- **Negative control: dry-season flood alerts (December to February):**
+  - Sylhet: Dec 0, Jan 6, Feb 12 (Total: 18 High days; January High days reduced from 21 to 6, Dec from 4 to 0; mean January flood score 58.6)
+  - Sunamganj: Dec 3, Jan 4, Feb 10 (Total: 17 High days)
+  - Rangpur: Dec 0, Jan 14, Feb 16 (Total: 30 High days)
+  - Sylhet annual High days share: Jan 6.7% (6), Feb 13.5% (12), Mar 0.0% (0), Apr 12.4% (11), May 20.2% (18), Jun 24.7% (22), Jul 1.1% (1), Aug 0.0% (0), Sep 9.0% (8), Oct 12.4% (11), Nov 0.0% (0), Dec 0.0% (0); Total: 89 days.
 - **Decisions:**
   - Reconciled backtest step 3 logic: `backend/app/services/backtest.py` was updated to accept Moderate or High for Step 3 (`flood_level in ("moderate", "high")`). Because Sylhet scored 91.32 (High) on 2022-05-15, requiring exact Moderate skipped ahead to 2022-05-25 and delayed first High to 2022-06-02. Reconciling step 3 aligns `/api/backtest/sylhet-2022` with validation report Block A (both 32 days lead time, first High 2022-05-15).
   - False alarm defined as High flood days after 2022-06-30 up to 2022-09-30 (since spec does not define the flood period).
@@ -489,6 +494,7 @@ Last completed task: B8 (Phase 12 complete: backtest reconciliation, validation 
 - R-011: FIXED, `cd frontend; npm audit --omit=dev`
 - Section-10.2: FIXED, `.\.venv\Scripts\python.exe scripts\verify_endpoints.py` and `.\.venv\Scripts\python.exe -m pipeline.run_pipeline --start 2026-10-12 --end 2026-10-14 --run late` (24 rows in scratch database, status ok)
 - R-008, R-023: FIXED, `.\.venv\Scripts\python.exe -m pipeline.validate report` (Option A wet-day threshold 1.0 mm applied identically to POWER baseline and live IMERG; Sylhet January flood score 58.6; winter High days cut by 50% from 36 to 18; lead time 32 days preserved)
+- R-007: FIXED, `git grep -n "superseded, see Phase 12 and C4 details" PROGRESS.md`
 
 ### Section 10.2 Live Checks & Pipeline Integration Evidence
 - `verify_endpoints.py`: all checks (a-f) passed (POWER daily point, CMR IMERG granule count, earthaccess login, IMERG netcdf4 dataset read, GIBS layer identifiers, CMR SMAP SPL4SMGP latest granule).
